@@ -1,0 +1,119 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ==========================================
+    // 🛡️ 核心權限判斷函式 (Helper Functions)
+    // ==========================================
+    function isLoggedIn() { return request.auth != null; }
+    
+    function isBlocked() { 
+      return isLoggedIn() && 'blocked' in request.auth.token && request.auth.token.blocked == true;
+    }
+    
+    function isSuperAdmin() {
+      // 超級管理員信箱比對
+      return isLoggedIn() && request.auth.token.email == "chao82465@gmail.com";
+    }
+    
+    function isAdmin() {
+      return isSuperAdmin() || (isLoggedIn() && 'admin' in request.auth.token && request.auth.token.admin == true);
+    }
+
+    function isScopedAdmin() {
+      return isLoggedIn() && 'scopedAdmin' in request.auth.token && request.auth.token.scopedAdmin != null;
+    }
+
+    function isWithinAdminScope(docData) {
+      let scope = request.auth.token.scopedAdmin;
+      return scope != null && (
+        (scope.type == 'tournament' && docData.get('tournamentId', '') == scope.value) ||
+        (scope.type == 'city' && docData.get('city', '') == scope.value) 
+      );
+    }
+
+    // 表單資料合法性基本防禦
+    function isValidRegistrationData(data) {
+      let hasRequired = data.keys().hasAll(['unit', 'phone', 'coach1', 'playerName', 'item', 'group', 'level', 'fee', 'birthday', 'idNumber']);
+      let validLengths = 
+        data.get('unit', '').size() <= 100 && 
+        data.get('phone', '').size() <= 30 &&
+        data.get('playerName', '').size() <= 500 && 
+        data.get('item', '').size() <= 50 && 
+        data.get('group', '').size() <= 50 &&
+        data.get('birthday', '').size() <= 200 &&
+        data.get('idNumber', '').size() <= 200;
+      let safeStrings = 
+        !data.get('unit', '').matches('.*[<>].*') && 
+        !data.get('playerName', '').matches('.*[<>].*') && 
+        !data.get('phone', '').matches('.*[<>].*');
+      let validFee = data.fee is number && data.fee >= 0 && data.fee <= 50000;
+      return hasRequired && validLengths && safeStrings && validFee;
+    }
+
+    // ==========================================
+    // 📂 1. 賽事設定檔安全防護 (物理拆分重構)
+    // ==========================================
+    
+    // 🔓 公開賽事資訊 (如賽事名稱、日期、地點等) ── 允許所有人讀取
+    match /artifacts/{appId}/public/data/settings/global {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // 🔒 敏感人員名單 (包含 admins、blockedUsers 等) ── 僅限管理員讀寫
+    match /artifacts/{appId}/public/data/settings/private {
+      allow read, write: if isAdmin();
+    }
+
+    // ==========================================
+    // 📂 2. 其他資料表權限規則
+    // ==========================================
+
+    // 聚合統計資料表 (僅允許 Cloud Functions 寫入)
+    match /artifacts/{appId}/public/data/user_stats/{statId} {
+      allow read: if isAdmin();
+      allow write: if false; 
+    }
+
+    // 單一設備登入防護
+    match /artifacts/{appId}/public/data/user_sessions/{userId} {
+      allow read, write: if isLoggedIn() && request.auth.uid == userId;
+    }
+
+    // 常用隊職員名單權限
+    match /artifacts/{appId}/public/data/team_profiles/{profileId} {
+      allow read: if isLoggedIn() && (resource.data.userId == request.auth.uid || isAdmin() || isScopedAdmin());
+      allow create: if isLoggedIn() && (request.resource.data.userId == request.auth.uid || isAdmin() || isScopedAdmin());
+      allow update: if isLoggedIn() && (
+        (resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid) || 
+        isAdmin() || isScopedAdmin()
+      );
+      allow delete: if isLoggedIn() && (resource.data.userId == request.auth.uid || isAdmin() || isScopedAdmin());
+    }
+
+    // 報名資料表核心權限
+    match /artifacts/{appId}/public/data/registrations/{regId} {
+      allow read: if isLoggedIn() && (
+        resource.data.userId == request.auth.uid || 
+        isAdmin() || 
+        (isScopedAdmin() && isWithinAdminScope(resource.data))
+      );
+      allow create: if isLoggedIn() && !isBlocked() && isValidRegistrationData(request.resource.data) && (
+        isAdmin() || 
+        (isScopedAdmin() && isWithinAdminScope(request.resource.data)) || 
+        request.resource.data.userId == request.auth.uid
+      );
+      allow update: if isLoggedIn() && !isBlocked() && isValidRegistrationData(request.resource.data) && (
+          isAdmin() || 
+          (isScopedAdmin() && isWithinAdminScope(resource.data) && isWithinAdminScope(request.resource.data)) || 
+          (resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid)
+      );
+      allow delete: if isLoggedIn() && !isBlocked() && (
+        resource.data.userId == request.auth.uid || 
+        isAdmin() || 
+        (isScopedAdmin() && isWithinAdminScope(resource.data))
+      );
+    }
+  }
+}

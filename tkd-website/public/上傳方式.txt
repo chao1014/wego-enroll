@@ -1,0 +1,11 @@
+👉 解決辦法：切換帳號
+
+在終端機輸入：firebase logout
+
+再次輸入：firebase login
+
+這次在彈出的網頁中，請選擇擁有 wego-enroll 專案的那個 Google 帳號來授權。
+
+登入成功後，直接執行：firebase deploy --only hosting，要上傳index.js則用firebase deploy --only functions
+
+

@@ -1,0 +1,47 @@
+當您準備開始修改 HTML、JS 或 CSS 時，請依照以下順序：
+
+啟動監聽器：
+
+在 VS Code 開啟終端機。
+
+輸入指令：npm run dev 。
+
+注意：看到 Rebuilding... Done 後，請不要關閉此視窗。
+
+進行修改：
+
+
+修改 HTML/JS：直接在 index.html 或 js/ 檔案中加入 Tailwind Class 。
+
+
+修改自定義 CSS：請修改 tkd-website/public/css/style.css 。
+
+
+自動編譯：只要按下儲存 (Ctrl+S)，監聽器會自動更新 output.css 。
+
+預覽畫面：
+
+直接重新整理瀏覽器頁面即可看到最新樣式。
+
+三、 部署上線流程
+當功能開發完成，準備更新到 Firebase 託管時：
+
+產生正式版 CSS：
+
+關閉原本的監聽器（或另開新視窗）。
+
+輸入指令：npm run build
+
+這會執行 --minify 壓縮，確保 output.css 體積最小化 。
+
+執行部署：
+
+輸入指令：firebase deploy --only hosting
+
+五、 終端機管理技巧
+
+視窗 A (Dev)：專門放著跑 npm run dev，讓它負責監聽 CSS 。
+
+視窗 B (General)：用來跑 firebase deploy、git 指令或是進行檔案管理。
+
+快捷鍵：在 VS Code 終端機面板點擊 「+」 符號即可快速新增視窗。

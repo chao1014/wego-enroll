@@ -1,0 +1,225 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================
+   全域基礎與滾動設定 (相容 iOS & Android)
+   ========================================== */
+html, body {
+    -webkit-overflow-scrolling: touch;
+    height: auto;
+    min-height: 100%;
+}
+
+html {
+    /* 終極障眼法：讓最底層背景跟 Footer 一樣黑，iOS 邊界回彈時不會白白一塊 */
+    background-color: #111827; 
+}
+
+body {
+    font-family: 'Noto Sans TC', sans-serif;
+    /* 改為與首頁相同的深色背景 */
+    background-color: #111827; 
+    overflow-x: hidden;
+}
+
+/* ==========================================
+   UI 動畫與元件樣式
+   ========================================== */
+.fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.page-section {
+    display: none;
+    opacity: 0;
+}
+
+.page-section.active {
+    display: block;
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* ==========================================
+   自訂捲動條樣式
+   ========================================== */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* ==========================================
+   特定區塊排版與互動
+   ========================================== */
+.rule-content {
+    line-height: 1.8;
+    text-align: justify;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-all;
+}
+
+.tournament-card {
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.tournament-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+#mobile-menu {
+    transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+
+#mobile-menu.open {
+    max-height: 500px;
+    opacity: 1;
+    border-top: 1px solid #374151;
+}
+
+#global-loader {
+    transition: opacity 0.5s ease-out, visibility 0.5s;
+}
+
+#global-loader.hidden-loader {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* ==========================================
+   內部容器捲動優化 (Nested Scrolling)
+   ========================================== */
+/* 針對規程與附件的捲動容器優化 */
+#info-content .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+    /* 在內部容器使用 contain，防止滾動連鎖反應，這在安卓與 iOS 都很穩定 */
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+}
+
+/* 針對選手報名總表等表格容器也一併優化 */
+#userTableBody .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+}
+
+/* ==========================================
+   全域列印優化設定 (Print Styles)
+   ========================================== */
+@media print {
+    /* 1. 設定標準紙張邊界 */
+    @page { margin: 1cm; size: A4 portrait; }
+    
+    body { 
+        background-color: white !important; 
+        -webkit-print-color-adjust: exact; 
+        print-color-adjust: exact; 
+    }
+    
+    /* 2. 徹底消滅所有頁面上方的導覽列留白 */
+    main { 
+        padding-top: 0 !important; 
+        padding-bottom: 0 !important; 
+        margin-top: 0 !important; 
+    }
+    
+    /* 3. 隱藏導覽列、所有按鈕、Loader 與不必要的浮動元素 */
+    #navbar, button, .no-print, #admin-save-container, #global-loader { 
+        display: none !important; 
+    }
+    
+    /* 4. 將白底卡片的圓角、陰影與邊距歸零，讓內容完美貼齊紙張邊緣 */
+    .page-section > div {
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* 5. 隱藏後台的黑色標題列與切換分頁，只留下乾淨的表格內容 */
+    .bg-tkdDark, .sticky.top-16 { 
+        display: none !important; 
+    }
+    
+    /* 6. 確保表格在跨頁時不會被切斷 */
+    table { page-break-inside: auto; width: 100% !important; }
+    tr { page-break-inside: avoid; page-break-after: auto; }
+
+    /* 7. 隱藏主畫面其他內容，唯獨顯示預覽總表 */
+    body * {
+        visibility: hidden;
+    }
+
+    #summary-content,
+    #summary-content * {
+        visibility: visible !important;
+    }
+
+    /* 強制顯示列印包裝容器內的所有層級 */
+    .print-wrapper, .print-wrapper * {
+        visibility: visible !important;
+    }
+}
+
+/* ==========================================
+   Modal 彈窗修復 (配合 VS Code 警告清理)
+   ========================================== */
+   div[id$="Modal"]:not(.hidden) {
+    display: flex !important;
+}
+
+/* ==========================================
+   版面網格修復 (消除 hidden 與 grid 衝突)
+   ========================================== */
+   #info-content:not(.hidden),
+   #reg-form-container:not(.hidden) {
+       display: grid !important;
+   }
+
+/* ==========================================
+   登入版面置中修復 (消除 active 與 flex 衝突)
+   ========================================== */
+   #page-login:not(.hidden) {
+    display: flex !important;
+}

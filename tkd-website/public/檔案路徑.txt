@@ -1,0 +1,41 @@
+D:\taekwondo-suite\wego-enroll
+├── dist/                               # [成品] Vite 編譯產出的最終網站目錄，Firebase Hosting 部署所讀取的實體目錄
+├── functions/                          # Firebase Cloud Functions 專案 (後端代碼區，Node.js 環境)
+│   ├── node_modules/                   # [後端套件] 負責 Cloud Functions 執行時所需的 Node 套件
+│   ├── index.js                        # 後端 API 與費用/權限校正邏輯核心，實作 verifyAndCorrectFee 版本快取機制
+│   └── package.json                    # 後端專案定義與相依套件設定
+├── node_modules/                       # [開發工具] 本地開發工具，包含 Vite、Tailwind CSS、Firebase CLI 等套件
+├── public/                             # 根目錄靜態資源目錄，Vite 打包時內容會直接複製到 dist 根目錄
+│   ├── daedo_banner.png                # LINE / FB 社群分享連結時所顯示的預覽大圖
+│   └── robots.txt                      # 機器人爬蟲設定，已特別允許 Facebook / LINE 爬蟲以防分享卡片 403 阻擋
+├── tkd-website/                        # 原始碼主目錄
+│   └── public/                         # Vite 開發與打包的原始碼資源根目錄 
+│       ├── css/
+│       │   └── style.css               # [樣式定義] 自定義 CSS 與 Tailwind CSS 指令輸入端
+│       ├── js/                         # [核心邏輯] 前端 JavaScript 模組化程式碼
+│       │   ├── admin-data.js           # 管理後台：資料統計、Excel 匯出與備份還原（還原改採 450 筆分批 Batch 寫入安全機制）
+│       │   ├── admin-settings.js       # 管理後台：賽事架構設定、回收桶清理與進階參數配置 UI 互動
+│       │   ├── admin-users.js          # 管理後台：管理員與一般帳號列表、權限授權及封鎖名單管理
+│       │   ├── admin.js                # 管理後台：主控腳本、頁面初始化與 Tab 選單切換邏輯
+│       │   ├── app.js                  # 系統啟動器：全域監聽器綁定與第三方/自定義模組掛載中心
+│       │   ├── auth.js                 # 驗證防禦層：Google 生態系登入與使用者身分/角色（Role）評估
+│       │   ├── firebase.js             # 初始化：Firebase SDK 初始化配置與全域路徑 Helper 封裝
+│       │   ├── frontend.js             # 報名表單層：選手報名、即時欄位驗證、PDF 預覽（優化中文字型與防跑版渲染機制）
+│       │   ├── i18n.js                 # 多國語系層：多語系字典定義與全域語系切換函式
+│       │   ├── store.js                # 狀態管理層：集中管理 appData (包含選手、費用、賽事) 與目前使用者狀態
+│       │   └── ui.js                   # 介面控制層：SPA 單頁路由導航、彈出視窗與通用動態 UI 工具組
+│       ├── products/                   # Daedo 廣告輪播商品圖片放置區 (包含 1.png ~ 21.png 等 18 張商品圖)
+│       ├── firebase規則.txt            # [安全規則] Firestore 安全規則實體備份（已物理拆分 private 與 global 規則）
+│       ├── 上傳方式.txt                # [部署指南] 說明如何手動與自動將編譯產物上傳至 Firebase 服務
+│       ├── 修改前端流程.txt            # [開發指引] 記錄前端程式碼修改、語系調整與 Vite 打包發布的完整步驟
+│       ├── 檔案路徑.txt                # [目錄說明] 也就是本文件，用以描述專案的樹狀結構與各檔案職責
+│       ├── index.html                  # 網站主入口 HTML 原始碼 (Vite 編譯與打包的核心起點)
+│       ├── line_qr.png                 # 聯絡客服或官方群組使用的 LINE QR Code 圖片
+│       └── logo.png                    # 網站主要識別標誌 (Logo) 靜態資源
+├── .firebaserc                         # Firebase 專案關聯設定檔 (關聯至 active 專案)
+├── firebase.json                       # Firebase 服務設定檔 (已設定 Hosting 針對 index.html 停用強快取以防發布未更新)
+├── package.json                        # [專案定義] 設定 Vite 指令、ES 模組類型與本地相依套件
+├── package-lock.json                   # 鎖定 NPM 套件的精確安裝版本紀錄
+├── postcss.config.js                   # PostCSS 設定檔，協助 Vite 編譯與後處理 Tailwind CSS 樣式
+├── tailwind.config.js                  # Tailwind CSS 核心樣式配置文件 (包含掃描路徑與調色盤自定義)
+└── vite.config.js                      # Vite 核心設定檔，配置打包路徑、動態導入與程式碼分割 (Chunking) 策略
