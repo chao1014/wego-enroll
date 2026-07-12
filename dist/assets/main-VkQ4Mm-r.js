@@ -282,9 +282,9 @@ import{r as e}from"./rolldown-runtime-S-ySWqyJ.js";import{a as t,c as n,d as r,f
                     </div>
                 </div>
             `,t.className=`bg-blue-50/50 px-4 py-3.5 rounded-xl block w-full border border-blue-100/60 shadow-sm mt-3`,n.disabled=!1,n.innerHTML=`
-                <div class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 leading-snug">
+                <div class="flex flex-col items-center justify-center gap-1 leading-snug">
                     <div class="text-base whitespace-nowrap font-bold"><i class="fas ${s} mr-2"></i>${o}</div>
-                    <div class="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-[11px] sm:text-xs font-normal tracking-wider whitespace-nowrap opacity-90">
+                    <div class="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-[11px] sm:text-xs font-normal tracking-wider whitespace-nowrap opacity-90 mt-1">
                         <span>(${Y(`reg.time-remaining`)} ${a} ${Y(`reg.day`)} ${c}:${u}:${d})</span>
                         <span class="hidden sm:inline-block border-l border-white/30 h-3"></span>
                         <span>(${Y(`reg.time-deadline`)}: ${l})</span>

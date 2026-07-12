@@ -49,19 +49,19 @@ window.showToast = (message, type = 'success') => {
     const toast = document.createElement('div');
     const bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
     const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
-    
+
     // ✨ 加入了 w-max 與 whitespace-nowrap 強制撐開且不換行
     toast.className = `fixed top-20 left-1/2 transform -translate-x-1/2 ${bgColor} text-white px-6 py-3 rounded-2xl shadow-2xl font-black text-sm z-[200] flex items-center gap-3 transition-all duration-300 -translate-y-4 opacity-0 pointer-events-none w-max whitespace-nowrap`;
     toast.innerHTML = `<i class="fas ${icon} text-lg"></i><span>${message}</span>`;
-    
+
     document.body.appendChild(toast);
-    
+
     // 觸發進入動畫
     requestAnimationFrame(() => {
         toast.classList.remove('-translate-y-4', 'opacity-0');
         toast.classList.add('translate-y-0', 'opacity-100');
     });
-    
+
     // 3 秒後觸發離開動畫並移除節點
     setTimeout(() => {
         toast.classList.remove('translate-y-0', 'opacity-100');
@@ -79,7 +79,7 @@ window.toggleUnitCard = (safeUnitId, encodedUnit) => {
     const content = document.getElementById(`content-${safeUnitId}`);
     const icon = document.getElementById(`icon-${safeUnitId}`);
     const unitName = decodeURIComponent(encodedUnit); // 解碼還原單位名稱
-    
+
     if (!content || !icon) return;
 
     if (content.classList.contains('hidden')) {
@@ -109,10 +109,10 @@ window.showCustomConfirm = (title, htmlMessage, confirmText = '確定', cancelTe
 
         document.getElementById('customConfirmTitle').innerText = title;
         document.getElementById('customConfirmMessage').innerHTML = htmlMessage;
-        
+
         const btnOk = document.getElementById('btnCustomConfirmOk');
         const btnCancel = document.getElementById('btnCustomConfirmCancel');
-        
+
         btnOk.innerText = confirmText;
         btnCancel.innerText = cancelText;
 
@@ -149,7 +149,7 @@ window.selectTournament = (id) => {
     if (!tour) return; // 🛡️ 安全檢查：找不到賽事不執行
 
     setSelectedTournament(tour);
-    
+
     // ✨ 修正 4：從首頁點進來，強制清除任何代加/修改的殘留狀態
     const form = document.getElementById('registrationForm');
     if (form) form.reset();
@@ -171,18 +171,18 @@ window.selectTournament = (id) => {
         });
         logEvent(analytics, 'page_view', { page_title: `賽事規程: ${tour.name}` });
     }
-    
+
     // 顯示導覽列按鈕
     document.getElementById('nav-info')?.classList.remove('hidden');
     document.getElementById('nav-info-mobile')?.classList.remove('hidden');
-    
+
     // 重設隱私權勾選狀態
     const privacyCheckbox = document.getElementById('privacy-consent');
     if (privacyCheckbox) {
         privacyCheckbox.checked = false;
         if (window.toggleRegisterBtn) window.toggleRegisterBtn();
     }
-    
+
     if (window.updateRegisterNavVisibility) window.updateRegisterNavVisibility();
 
     // 轉跳至規程頁
@@ -200,13 +200,13 @@ window.openHistoryAutofillModal = async () => { // ✨ 改為 async
     // 1. 先開啟視窗並顯示載入中動畫 (因為如果去雲端抓資料會有一點延遲)
     listContainer.innerHTML = '<div class="text-center py-10"><i class="fas fa-spinner fa-spin text-tkdBlue text-3xl mb-3"></i><div class="text-gray-500 font-bold text-sm">正在尋找歷史名單...</div></div>';
     modal.classList.remove('hidden');
-    setTimeout(() => { 
-        modal.firstElementChild.classList.remove('scale-95'); 
-        modal.firstElementChild.classList.add('scale-100'); 
+    setTimeout(() => {
+        modal.firstElementChild.classList.remove('scale-95');
+        modal.firstElementChild.classList.add('scale-100');
     }, 10);
 
     let profiles = [];
-    
+
     // 2. 判斷目前是否處於「管理員代為操作」模式
     const overrideUidEl = document.getElementById('overrideUid');
     const overrideEmailEl = document.getElementById('overrideEmail');
@@ -216,12 +216,12 @@ window.openHistoryAutofillModal = async () => { // ✨ 改為 async
     if (targetUid !== currentUser?.uid) {
         // ✨ 代加/修改模式：去資料庫抓取「目標對象」的專屬名單
         titleEl.innerHTML = `<i class="fas fa-history text-tkdBlue mr-2"></i> 選擇 <span class="text-tkdRed ml-1 mr-1">${targetEmail.split('@')[0]}</span> 的歷史資料`;
-        
+
         try {
             const q = query(getDbPath('team_profiles'), where("userId", "==", targetUid));
             const snap = await getDocs(q);
             snap.forEach(d => profiles.push({ id: d.id, ...d.data() }));
-            
+
             // 依據最後更新時間降冪排序
             profiles.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
         } catch (e) {
@@ -248,12 +248,12 @@ window.openHistoryAutofillModal = async () => { // ✨ 改為 async
         const card = document.createElement('div');
         card.className = "bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-tkdBlue p-4 rounded-2xl cursor-pointer transition-all duration-200 group active:scale-95 shadow-sm";
         card.onclick = () => window.applyHistoryProfile(p);
-        
+
         const allCoaches = [p.coach1, p.coach2, p.coach3].filter(c => c).join('、') || '無';
         const displayUnit = p.subTeam ? `${p.unit}${p.subTeam}` : p.unit;
         const leaderInfo = p.leader || '無';
         const managerInfo = p.manager || '無';
-        
+
         card.innerHTML = `
             <div class="font-black text-gray-800 text-base mb-2 group-hover:text-tkdBlue transition-colors">
                 <i class="fas fa-shield-alt text-gray-400 group-hover:text-tkdBlue mr-1"></i> ${sanitizeHTML(displayUnit)}
@@ -270,7 +270,7 @@ window.openHistoryAutofillModal = async () => { // ✨ 改為 async
 
 window.closeHistoryAutofillModal = () => {
     const modal = document.getElementById('historyAutofillModal');
-    modal.firstElementChild.classList.remove('scale-100'); 
+    modal.firstElementChild.classList.remove('scale-100');
     modal.firstElementChild.classList.add('scale-95');
     setTimeout(() => modal.classList.add('hidden'), 300);
 };
@@ -280,30 +280,30 @@ window.navigateToManageProfiles = () => {
     // 防呆：檢查是否已經填寫了單位或選手，提醒會遺失進度
     const unitInput = document.getElementById('unit');
     const playerNameInput = document.querySelector('.dynamic-player-name');
-    
+
     if ((unitInput && unitInput.value.trim()) || (playerNameInput && playerNameInput.value.trim())) {
         if (!confirm('前往管理中心將會遺失您目前填寫的報名表進度，確定要離開嗎？')) {
             return;
         }
     }
-    
+
     window.closeHistoryAutofillModal();
     if (window.navigate) window.navigate('my-records');
-    
+
     // 延遲執行，確保切換頁面後，自動展開「常用隊職員名單」區塊並平滑滾動過去
     setTimeout(() => {
         const profilesBody = document.getElementById('teamProfilesBody');
         const profilesIcon = document.getElementById('teamProfilesIcon');
-        
+
         // 1. 自動展開名單區塊
         if (profilesBody && profilesBody.classList.contains('hidden')) {
             profilesBody.classList.remove('hidden');
             if (profilesIcon) profilesIcon.classList.add('rotate-180');
         }
-        
+
         // 2. ✨ 修正：直接滾動到頁面最頂部，避免被導覽列(Navbar)蓋住按鈕
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        
+
     }, 300);
 };
 
@@ -322,24 +322,24 @@ window.goToMyRecordsForUpload = () => {
 
 window.applyHistoryProfile = (p) => {
     document.getElementById('unit').value = p.unit;
-    document.getElementById('subTeam').value = p.subTeam || ''; 
+    document.getElementById('subTeam').value = p.subTeam || '';
     const phoneInput = document.getElementById('phone');
     phoneInput.value = p.phone;
     phoneInput.dispatchEvent(new Event('input'));
     document.getElementById('leader').value = p.leader;
     document.getElementById('manager').value = p.manager;
     document.getElementById('coach1').value = p.coach1;
-    
-    const limit = selectedTournament ? (selectedTournament.coachLimit || 3) : 3;    
+
+    const limit = selectedTournament ? (selectedTournament.coachLimit || 3) : 3;
     const coach2Input = document.getElementById('coach2');
     const coach3Input = document.getElementById('coach3');
-    
+
     // 依據名額限制決定是否帶入資料，如果不允許則強制給空值，避免幽靈資料
     if (coach2Input) coach2Input.value = limit >= 2 ? (p.coach2 || '') : '';
     if (coach3Input) coach3Input.value = limit >= 3 ? (p.coach3 || '') : '';
-    
-    if (window.validateUnit) window.validateUnit(); 
-    
+
+    if (window.validateUnit) window.validateUnit();
+
     window.closeHistoryAutofillModal();
     window.showToast('✅ 隊職員資料已成功帶入！');
 };
@@ -362,7 +362,7 @@ window.renderTeamProfiles = () => {
     profiles.forEach(p => {
         const displayUnit = p.subTeam ? `${p.unit}${p.subTeam}` : p.unit;
         const allCoaches = [p.coach1, p.coach2, p.coach3].filter(c => c).join('、') || '無';
-        
+
         container.innerHTML += `
             <div class="bg-white border border-gray-200 p-4 rounded-2xl shadow-sm flex flex-col justify-between">
                 <div>
@@ -497,10 +497,10 @@ window.promptDeleteTeamProfile = async (id) => {
 window.manageTournamentRegistrations = (id) => {
     const tour = appData.tournaments.find(t => t.id === id);
     if (!tour) return;
-    
+
     // 1. 設定選定的賽事
     setSelectedTournament(tour);
-    
+
     // ✨ 修正 3：既然是管理「自己」的報名，強制清除任何代加/修改的殘留狀態
     const form = document.getElementById('registrationForm');
     if (form) form.reset();
@@ -515,10 +515,10 @@ window.manageTournamentRegistrations = (id) => {
     // 隱藏編輯按鈕
     document.getElementById('btn-cancel-edit')?.classList.add('hidden');
     document.getElementById('edit-badge')?.classList.add('hidden');
-    
+
     // 2. 轉跳到報名頁面 (該頁面下方即是「您的報名紀錄與總表」)
     if (window.navigate) window.navigate('register');
-    
+
     // 3. 強制觸發一次表格渲染，確保資料出現
     setTimeout(() => {
         if (window.renderUserTables) window.renderUserTables();
@@ -527,15 +527,15 @@ window.manageTournamentRegistrations = (id) => {
 
 // 渲染「我的報名」中控台頁面
 window.renderMyRecordsPage = () => {
-    const container = document.getElementById('myRecordsTournamentsList'); 
+    const container = document.getElementById('myRecordsTournamentsList');
     if (!container) return;
 
-    const myData = appData.registrations.filter(r => 
+    const myData = appData.registrations.filter(r =>
         r.userId === currentUser?.uid
     );
-    
+
     const groupedByTour = {};
-    
+
     myData.forEach(r => {
         const tourObj = appData.tournaments.find(t => t.id === r.tournamentId);
         // ✨ 如果賽事在後台已被設定為隱藏 (isVisible === false) 或被刪除，同步隱藏不顯示於「我的報名」
@@ -576,7 +576,7 @@ window.renderMyRecordsPage = () => {
             const parts = key.split('@@');
             const u = parts[0];
             const st = parts[1] || '';
-            const sub = (appData.myUnitSubmissions || []).find(s => 
+            const sub = (appData.myUnitSubmissions || []).find(s =>
                 s.tournamentId === tId && s.unit === u && s.subTeam === st
             );
             const hasSummary = !!(sub && sub.summaryFormUrl);
@@ -666,7 +666,7 @@ window.renderMyRecordsPage = () => {
         const data = groupedByTour[tId];
         const card = document.createElement('div');
         card.className = "bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6";
-        
+
         const countInfo = t('records.registered-count').replace('{n}', data.regs.length);
         const manageBtnText = t('records.manage-btn');
         const printSectionTitle = t('records.print-section-title');
@@ -707,7 +707,7 @@ window.renderMyRecordsPage = () => {
             const printBtnText = t('records.print-btn');
             const displayUnit = g.subTeam ? `${g.unit} (${g.subTeam})` : g.unit;
 
-            const sub = (appData.myUnitSubmissions || []).find(s => 
+            const sub = (appData.myUnitSubmissions || []).find(s =>
                 s.tournamentId === tId && s.unit === g.unit && s.subTeam === g.subTeam
             );
 
@@ -789,7 +789,7 @@ window.renderMyRecordsPage = () => {
 
             const unitItem = document.createElement('div');
             unitItem.className = "flex flex-col bg-white border border-gray-200 p-4 sm:p-5 rounded-2xl shadow-sm hover:border-tkdBlue transition-all group gap-2.5";
-            
+
             unitItem.innerHTML = `
                 <!-- 第一行：單位名稱、狀態標章與報名項數 -->
                 <div class="flex items-start flex-grow min-w-0">
@@ -867,11 +867,11 @@ window.renderHomePage = () => {
 
     if (!window.hasAppliedUrlFilters) {
         const urlParams = new URLSearchParams(window.location.search);
-        
+
         if (urlParams.has('search') && searchInput) {
             searchInput.value = urlParams.get('search');
         }
-        
+
         if (urlParams.has('city') && cityFilter) {
             const urlCity = urlParams.get('city');
             if (!Array.from(cityFilter.options).some(opt => opt.value === urlCity)) {
@@ -896,9 +896,9 @@ window.renderHomePage = () => {
     // 1. 關鍵字篩選
     const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
     if (keyword) {
-        visibleTours = visibleTours.filter(t => 
-            (t.name && t.name.toLowerCase().includes(keyword)) || 
-            (t.nameEn && t.nameEn.toLowerCase().includes(keyword)) || 
+        visibleTours = visibleTours.filter(t =>
+            (t.name && t.name.toLowerCase().includes(keyword)) ||
+            (t.nameEn && t.nameEn.toLowerCase().includes(keyword)) ||
             (t.location && t.location.toLowerCase().includes(keyword))
         );
     }
@@ -915,7 +915,7 @@ window.renderHomePage = () => {
         visibleTours = visibleTours.filter(t => {
             const startTime = new Date(t.start || '').getTime();
             const endTime = new Date(t.end || '').getTime();
-            
+
             if (status === 'open') return nowTime >= startTime && nowTime <= endTime;
             if (status === 'upcoming') return nowTime < startTime;
             if (status === 'closed') return nowTime > endTime;
@@ -927,7 +927,7 @@ window.renderHomePage = () => {
 
     if (visibleTours.length === 0) {
         grid.classList.add('hidden');
-        if(emptyMsg) {
+        if (emptyMsg) {
             // ✨ 動態切換空狀態的提示文字
             const emptyTextEl = emptyMsg.querySelector('p');
             if (emptyTextEl) {
@@ -943,7 +943,7 @@ window.renderHomePage = () => {
     }
 
     grid.classList.remove('hidden');
-    if(emptyMsg) emptyMsg.classList.add('hidden');
+    if (emptyMsg) emptyMsg.classList.add('hidden');
 
     // 排序邏輯
     visibleTours.sort((a, b) => {
@@ -953,7 +953,7 @@ window.renderHomePage = () => {
         const isEndedB = nowTime > endB;
 
         if (isEndedA !== isEndedB) {
-            return isEndedA ? 1 : -1; 
+            return isEndedA ? 1 : -1;
         }
 
         if (!isEndedA) {
@@ -985,11 +985,11 @@ window.renderHomePage = () => {
             statusClass = 'bg-green-50 text-green-700 border-green-200 shadow-[0_0_10px_rgba(34,197,94,0.3)] animate-pulse';
         }
 
-        const cityBadge = t.city 
-            ? `<span class="bg-gray-50 text-gray-700 px-2.5 py-1 rounded-lg text-[10px] font-black tracking-widest border border-gray-200 shadow-sm"><i class="fas fa-flag mr-1.5 text-gray-400"></i>主辦：${sanitizeHTML(t.city)}</span>` 
+        const cityBadge = t.city
+            ? `<span class="bg-gray-50 text-gray-700 px-2.5 py-1 rounded-lg text-[10px] font-black tracking-widest border border-gray-200 shadow-sm"><i class="fas fa-flag mr-1.5 text-gray-400"></i>主辦：${sanitizeHTML(t.city)}</span>`
             : '';
 
-        const scopeBadge = t.scope === 'local' 
+        const scopeBadge = t.scope === 'local'
             ? `<span class="bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-lg text-[10px] font-black tracking-widest border border-indigo-100 shadow-sm"><i class="fas fa-lock mr-1.5"></i>限本縣市報名</span>`
             : `<span class="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-lg text-[10px] font-black tracking-widest border border-blue-100 shadow-sm"><i class="fas fa-globe mr-1.5"></i>全國開放報名</span>`;
 
@@ -1075,12 +1075,12 @@ window.renderInfoPage = () => {
     if (!selectedTournament) return;
     const tit = document.getElementById('info-title');
     const rul = document.getElementById('info-rules');
-    
+
     const isEn = currentLang() === 'en';
     const scopeLocal = isEn ? '[Local Only] ' : '限本縣市 ';
     const scopeAll = isEn ? '[National] ' : '全國開放 ';
     const scopePrefix = selectedTournament.scope === 'local' ? scopeLocal : scopeAll;
-    
+
     const displayTitle = getLang(selectedTournament, 'title') || getLang(selectedTournament, 'name');
     const displayRules = getLang(selectedTournament, 'rules');
 
@@ -1095,7 +1095,7 @@ window.renderInfoPage = () => {
     // 2. 更緊湊的賽事快照資訊列
     const metaContainerId = 'info-meta-container';
     let metaContainer = document.getElementById(metaContainerId);
-    
+
     if (!metaContainer && tit) {
         metaContainer = document.createElement('div');
         metaContainer.id = metaContainerId;
@@ -1134,7 +1134,7 @@ window.renderInfoPage = () => {
 
         // 加入動態即時跳動的分秒倒數邏輯
         if (window.infoCountdownInterval) clearInterval(window.infoCountdownInterval);
-        
+
         const updateInfoCountdown = () => {
             const el = document.getElementById('info-countdown-text');
             if (!el) {
@@ -1167,7 +1167,7 @@ window.renderInfoPage = () => {
         updateInfoCountdown();
         window.infoCountdownInterval = setInterval(updateInfoCountdown, 1000);
     }
-    
+
     // 3. 渲染規程本文
     if (rul) {
         rul.innerText = displayRules || (isEn ? "No detailed rules available for this tournament." : "此賽事暫無詳細規程內容。");
@@ -1175,21 +1175,21 @@ window.renderInfoPage = () => {
 
     // 4. 渲染附件連結 (更緊湊的版本)
     const con = document.getElementById('info-links-container');
-    if (!con) return; 
+    if (!con) return;
     con.innerHTML = '';
-    
+
     if (!selectedTournament.links || selectedTournament.links.length === 0) {
         const noAttachmentMsg = isEn ? 'No attachments available.' : '目前無附件提供下載。';
         con.innerHTML = `<p class="text-xs text-gray-400 font-bold">${noAttachmentMsg}</p>`;
     } else {
         selectedTournament.links.forEach(l => {
             const it = document.createElement('a');
-            it.href = window.sanitizeURL(l.url); 
+            it.href = window.sanitizeURL(l.url);
             it.target = "_blank";
             it.className = "block bg-gray-50 p-3 rounded-xl border border-gray-100 flex items-center gap-3 hover:bg-white hover:border-blue-200 hover:shadow-sm transition-all group cursor-pointer";
-            
+
             const clickHint = isEn ? 'Click to download' : '點擊下載';
-            
+
             it.innerHTML = `
                 <div class="text-red-500 group-hover:text-red-600 transition-colors shrink-0"><i class="fas fa-file-pdf text-xl"></i></div>
                 <div class="flex-grow overflow-hidden">
@@ -1200,7 +1200,7 @@ window.renderInfoPage = () => {
             con.appendChild(it);
         });
     }
-    
+
     // 5. 狀態重置：每次切換賽事，取消勾選隱私權
     const privacyCheckbox = document.getElementById('privacy-consent');
     if (privacyCheckbox) {
@@ -1216,40 +1216,40 @@ window.renderInfoPage = () => {
 window.renderFormOptions = () => {
     const is = document.getElementById('item');
     if (!is || !selectedTournament) return;
-    
+
     is.innerHTML = '';
-    
+
     // ✨ 加入預設提示文字的雙語判斷
     const defaultPrompt = currentLang() === 'en' ? 'Please select an event...' : '請選擇參賽項目...';
     is.add(new Option(defaultPrompt, ''));
-    
+
     const linkage = selectedTournament.linkage || {};
-    const order = selectedTournament.itemOrder || Object.keys(linkage); 
-    
+    const order = selectedTournament.itemOrder || Object.keys(linkage);
+
     order.forEach(k => {
         if (linkage[k]) {
             // 使用 getLang 解析 "中,英" 字串
-            const displayName = getLang(k); 
-            is.add(new Option(displayName, k)); 
+            const displayName = getLang(k);
+            is.add(new Option(displayName, k));
         }
     });
-    
+
     window.onItemChange();
 };
 
 window.onItemChange = () => {
-    const is = document.getElementById('item'); 
+    const is = document.getElementById('item');
     const gs = document.getElementById('group');
     if (!is || !gs || !selectedTournament) return;
-    
+
     const selectedItemName = is.value;
     const d = (selectedTournament.linkage || {})[selectedItemName];
-    
-    gs.innerHTML = ''; 
+
+    gs.innerHTML = '';
     // ✨ 簡易雙語提示
     const defaultPrompt = currentLang() === 'en' ? 'Please select a category...' : '請先選擇上方項目...';
     gs.add(new Option(defaultPrompt, ''));
-    
+
     if (d) {
         const gOrder = (selectedTournament.groupOrder && selectedTournament.groupOrder[selectedItemName]) || Object.keys(d);
         gOrder.forEach(gn => {
@@ -1259,7 +1259,7 @@ window.onItemChange = () => {
             }
         });
     }
-    
+
     window.onGroupChange();
 };
 
@@ -1293,7 +1293,7 @@ window.validateUnit = () => {
     };
 
     const unitVal = unitInput.value.trim();
-    if (!unitVal) return clearError(); 
+    if (!unitVal) return clearError();
 
     // 判斷當前操作的目標 UID
     let targetUid = currentUser.uid;
@@ -1302,8 +1302,8 @@ window.validateUnit = () => {
 
     // 如果是「管理員代為新增」模式，抓取隱藏的教練 UID
     if (overrideUidEl && overrideUidEl.value) {
-        targetUid = overrideUidEl.value; 
-    } 
+        targetUid = overrideUidEl.value;
+    }
     // 如果是「管理員修改既有紀錄」模式，抓取該筆紀錄原本主人的 UID
     else if (editRecordIdEl && editRecordIdEl.value) {
         const existingRecord = (appData.registrations || []).find(r => r.id === editRecordIdEl.value);
@@ -1313,17 +1313,17 @@ window.validateUnit = () => {
     }
 
     // 去全局資料中比對，是否有「同賽事、同單位名稱、但不同帳號 (UID)」的報名紀錄
-    const conflictReg = (appData.registrations || []).find(r => 
-        r.tournamentId === selectedTournament.id && 
-        r.unit === unitVal && 
-        r.userId !== targetUid 
+    const conflictReg = (appData.registrations || []).find(r =>
+        r.tournamentId === selectedTournament.id &&
+        r.unit === unitVal &&
+        r.userId !== targetUid
     );
 
     if (conflictReg) {
         const conflictEmail = conflictReg.email || '???';
         return showError(`${t('val.unit-conflict')} (<span class="text-tkdBlue font-black">${conflictEmail}</span>)<br><span class="text-[10px] text-red-400 tracking-wider">${t('val.unit-conflict-sub')}</span>`);
     }
-    return clearError(); 
+    return clearError();
 };
 
 // ==========================================
@@ -1332,7 +1332,7 @@ window.validateUnit = () => {
 // 加上 isTyping 參數，用來判斷使用者是否「還在打字」
 window.validateSingleBirthday = (bInput, isTyping = false, itemSet = {}) => {
     if (!bInput) return true;
-    
+
     let errEl = bInput.parentElement.querySelector('.err-msg');
     if (!errEl) {
         errEl = document.createElement('div');
@@ -1359,25 +1359,25 @@ window.validateSingleBirthday = (bInput, isTyping = false, itemSet = {}) => {
     if (!dateVal) { bInput.dataset.rawInput = ""; return clearError(); }
 
     let parts = dateVal.split(/[\/\-]/);
-    if (parts.length > 1) { 
+    if (parts.length > 1) {
         let y = parseInt(parts[0], 10);
         if (y > 0 && y < 200) {
             parts[0] = (y + 1911).toString();
             dateVal = parts.join('/');
             bInput.value = dateVal;
-            bInput.dataset.rawInput = dateVal; 
+            bInput.dataset.rawInput = dateVal;
         }
     }
 
     const dateRegex = /^\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}$/;
     if (!dateRegex.test(dateVal)) {
-        if (isTyping) return clearError(); 
-        return showError(t('val.birth-incomplete')); 
+        if (isTyping) return clearError();
+        return showError(t('val.birth-incomplete'));
     }
 
     const bDate = new Date(dateVal.replace(/-/g, '/'));
     if (isNaN(bDate.getTime())) {
-        if (isTyping) return clearError(); 
+        if (isTyping) return clearError();
         return showError(t('val.birth-invalid'));
     }
 
@@ -1394,12 +1394,12 @@ window.validateSingleBirthday = (bInput, isTyping = false, itemSet = {}) => {
             return showError(`${t('val.age-error')}<br><span class="text-xs tracking-wider">${rangeText}</span>`);
         }
     }
-    return clearError(); 
+    return clearError();
 };
 
 window.validateSingleId = (idInput, isRequired) => {
     if (!idInput) return true;
-    
+
     let errEl = idInput.parentElement.querySelector('.err-msg');
     if (!errEl) {
         errEl = document.createElement('div');
@@ -1425,7 +1425,7 @@ window.validateSingleId = (idInput, isRequired) => {
         if (isRequired) return showError(t('val.id-required') || '身分證或護照號碼為必填');
         return clearError();
     }
-    
+
     // ✨ 修改：雙軌驗證機制
     const twIdRegex = /^[A-Z][1289A-D]\d{8}$/; // 台灣國民身分證與新舊版居留證
     const passportRegex = /^[A-Z0-9]{6,20}$/;  // 國際護照：放寬為 6~20 碼的英數字混合
@@ -1434,7 +1434,7 @@ window.validateSingleId = (idInput, isRequired) => {
     if (!twIdRegex.test(val) && !passportRegex.test(val)) {
         return showError(t('val.id-format') || '格式錯誤！請輸入有效的身分證、居留證或護照號碼（僅限 6~20 碼英數字）。');
     }
-    
+
     return clearError();
 };
 
@@ -1468,12 +1468,12 @@ window.validateSingleCoachName = (input) => {
 
     // 判斷是否包含中文
     const hasChinese = /[\u4e00-\u9fa5]/.test(val);
-    
+
     if (hasChinese) {
         // 規則 1：中文名字絕對不允許有空格
         if (/\s/.test(val)) {
-            const msg = coachLimit > 1 
-                ? '中文姓名請勿包含空格！若是多位教練請分開填寫至其他教練欄位。' 
+            const msg = coachLimit > 1
+                ? '中文姓名請勿包含空格！若是多位教練請分開填寫至其他教練欄位。'
                 : '中文姓名請勿包含空格！本賽事僅開放登錄一位教練。';
             return showError(msg);
         }
@@ -1482,16 +1482,16 @@ window.validateSingleCoachName = (input) => {
         // [^\u4e00-\u9fa5a-zA-Z‧·•･] 代表：只要含有「非 (中文、英文字母、原住民間隔號)」的字元就違規
         const hasInvalidSymbol = /[^\u4e00-\u9fa5a-zA-Z‧·•･]/.test(val);
         if (hasInvalidSymbol) {
-            const msg = coachLimit > 1 
-                ? '單一欄位只能填寫一位教練！請勿使用符號 (如 - 或 /) 串接，多位教練請分開填寫。' 
+            const msg = coachLimit > 1
+                ? '單一欄位只能填寫一位教練！請勿使用符號 (如 - 或 /) 串接，多位教練請分開填寫。'
                 : '本賽事僅開放登錄一位教練，請勿使用符號串接多位姓名！(原住民姓名之間隔號除外)';
             return showError(msg);
         }
     } else {
         // 規則 3：如果完全沒有中文 (例如純英文姓名 John Doe)，允許有空格，但擋下常見的串接符號
         if (/[\/、,，\-]/.test(val)) {
-            const msg = coachLimit > 1 
-                ? '單一欄位只能填寫一位教練！多位教練請分別填入其他教練欄位。' 
+            const msg = coachLimit > 1
+                ? '單一欄位只能填寫一位教練！多位教練請分別填入其他教練欄位。'
                 : '本賽事僅開放登錄一位教練，請勿填寫多位！';
             return showError(msg);
         }
@@ -1501,18 +1501,18 @@ window.validateSingleCoachName = (input) => {
 };
 
 window.onGroupChange = () => {
-    const is = document.getElementById('item'); 
-    const gs = document.getElementById('group'); 
+    const is = document.getElementById('item');
+    const gs = document.getElementById('group');
     const ls = document.getElementById('level');
     if (!is || !gs || !ls || !selectedTournament) return;
-    
+
     ls.innerHTML = '';
     const defaultPrompt = currentLang() === 'en' ? 'Please select a level/weight...' : '請選擇級別...';
     ls.add(new Option(defaultPrompt, ''));
 
     const itemName = is.value;
     const groupName = gs.value;
-    
+
     // ✨ 修改：只要有選擇項目，就不阻擋，讓選手框可以先長出來
     if (!itemName) {
         const container = document.getElementById('dynamic-players-container');
@@ -1567,7 +1567,7 @@ window.renderDynamicPlayers = (size, itemName, gSet = {}) => {
     }
 
     // 備份完成，現在可以安心清空了
-    container.innerHTML = ''; 
+    container.innerHTML = '';
 
     // 核心判斷：直接從組別的設定 (gSet) 決定是否顯示身分證欄位
     let requireId = gSet.requireId === 'true';
@@ -1577,7 +1577,7 @@ window.renderDynamicPlayers = (size, itemName, gSet = {}) => {
 
     for (let i = 0; i < size; i++) {
         const pNum = i + 1;
-        
+
         // 讀取雙語字典
         const labelName = t('reg.player-name');
         const labelBirth = t('reg.player-birth');
@@ -1614,18 +1614,18 @@ window.renderDynamicPlayers = (size, itemName, gSet = {}) => {
 
         // 綁定生日選擇器與驗證
         const bInput = document.getElementById(`birthday_${i}`);
-        let fpConfig = { 
-            dateFormat: "Y/m/d", locale: "zh_tw", disableMobile: "true", allowInput: true, errorHandler: () => {},
-            onChange: () => { 
-                if(bInput.value) bInput.dataset.rawInput = bInput.value;
+        let fpConfig = {
+            dateFormat: "Y/m/d", locale: "zh_tw", disableMobile: "true", allowInput: true, errorHandler: () => { },
+            onChange: () => {
+                if (bInput.value) bInput.dataset.rawInput = bInput.value;
                 window.validateSingleBirthday(bInput, false, gSet);
             }
         };
         if (gSet.birthMin) fpConfig.minDate = gSet.birthMin;
         if (gSet.birthMax) fpConfig.maxDate = gSet.birthMax;
-        
+
         window.birthdayPickers.push(window.flatpickr(bInput, fpConfig));
-        
+
         bInput.addEventListener('keyup', (e) => { e.target.dataset.rawInput = e.target.value; window.validateSingleBirthday(e.target, true, gSet); });
         bInput.addEventListener('blur', (e) => { setTimeout(() => window.validateSingleBirthday(e.target, false, gSet), 100); });
 
@@ -1649,7 +1649,7 @@ window.renderDynamicPlayers = (size, itemName, gSet = {}) => {
                 if (window.birthdayPickers[i]) {
                     window.birthdayPickers[i].setDate(backupData[i].birth, false);
                 }
-                
+
                 window.validateSingleBirthday(bInput, false, gSet);
             }
             if (iInput) iInput.value = backupData[i].id;
@@ -1661,7 +1661,7 @@ window.checkTournamentStatus = () => {
     if (window.countdownInterval) {
         clearInterval(window.countdownInterval);
     }
-    
+
     if (!selectedTournament) return;
 
     const tourTitleEl = document.getElementById('reg-current-tour');
@@ -1696,7 +1696,7 @@ window.checkTournamentStatus = () => {
         if (now < startTime) {
             msgEl.innerHTML = `<div class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 leading-snug"><div class="text-sm whitespace-nowrap"><i class="fas fa-clock mr-1"></i>${t('reg.status-pending')}</div><div class="text-xs font-normal whitespace-nowrap">(${t('reg.time-expect')}: ${tourStartStr})</div></div>`;
             msgEl.className = "font-black text-orange-600 bg-orange-50 px-5 py-3 rounded-xl block w-full text-center border border-orange-100 shadow-sm";
-            
+
             if (isAdmin) {
                 btn.disabled = false;
                 btn.innerHTML = `<div class="flex items-center justify-center leading-snug"><div class="text-base"><i class="fas ${mainIcon} mr-2"></i>${mainActionText} <span class="text-xs bg-white text-orange-600 px-2 py-0.5 rounded ml-2">${t('reg.admin-badge')}</span></div></div>`;
@@ -1704,11 +1704,11 @@ window.checkTournamentStatus = () => {
                 btn.disabled = true;
                 btn.innerHTML = `<div class="flex items-center justify-center leading-snug"><div class="text-base"><i class="fas fa-clock mr-2"></i>${t('reg.status-pending')}</div></div>`;
             }
-            
+
         } else if (now > endTime) {
             msgEl.innerHTML = `<div class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 leading-snug"><div class="text-sm whitespace-nowrap"><i class="fas fa-ban mr-1"></i>${t('reg.status-closed')}</div><div class="text-xs font-normal whitespace-nowrap">(${t('reg.time-deadline')}: ${tourEndStr})</div></div>`;
             msgEl.className = "font-black text-red-600 bg-red-50 px-5 py-3 rounded-xl block w-full text-center border border-red-100 shadow-sm";
-            
+
             if (isAdmin) {
                 btn.disabled = false;
                 btn.innerHTML = `<div class="flex items-center justify-center leading-snug"><div class="text-base"><i class="fas ${mainIcon} mr-2"></i>${mainActionText} <span class="text-xs bg-white text-red-600 px-2 py-0.5 rounded ml-2">${t('reg.admin-badge')}</span></div></div>`;
@@ -1717,7 +1717,7 @@ window.checkTournamentStatus = () => {
                 btn.innerHTML = `<div class="flex items-center justify-center leading-snug"><div class="text-base"><i class="fas fa-ban mr-2"></i>${t('reg.status-closed')}</div></div>`;
                 if (window.countdownInterval) clearInterval(window.countdownInterval);
             }
-            
+
         } else {
             const diff = endTime - now;
             const d = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -1739,11 +1739,11 @@ window.checkTournamentStatus = () => {
             `;
             msgEl.className = "bg-blue-50/50 px-4 py-3.5 rounded-xl block w-full border border-blue-100/60 shadow-sm mt-3";
             btn.disabled = false;
-            
+
             btn.innerHTML = `
-                <div class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 leading-snug">
+                <div class="flex flex-col items-center justify-center gap-1 leading-snug">
                     <div class="text-base whitespace-nowrap font-bold"><i class="fas ${mainIcon} mr-2"></i>${mainActionText}</div>
-                    <div class="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-[11px] sm:text-xs font-normal tracking-wider whitespace-nowrap opacity-90">
+                    <div class="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-[11px] sm:text-xs font-normal tracking-wider whitespace-nowrap opacity-90 mt-1">
                         <span>(${t('reg.time-remaining')} ${d} ${t('reg.day')} ${h}:${m}:${s})</span>
                         <span class="hidden sm:inline-block border-l border-white/30 h-3"></span>
                         <span>(${t('reg.time-deadline')}: ${tourEndStr})</span>
@@ -1756,7 +1756,7 @@ window.checkTournamentStatus = () => {
     const coachLimit = selectedTournament.coachLimit || 3;
     const coach2Input = document.getElementById('coach2');
     const coach3Input = document.getElementById('coach3');
-    
+
     // 找到包含 label 的父層容器 (通常是 grid 中的一個 div)
     const coach2Wrapper = coach2Input?.closest('div');
     const coach3Wrapper = coach3Input?.closest('div');
@@ -1803,7 +1803,7 @@ window.renderUserTables = () => {
 
     // 替換原本單純的 new Date() 排序
     const sorted = [...appData.registrations].sort((a, b) => parseTimeMs(b.time) - parseTimeMs(a.time));
-    
+
     const userBody = document.getElementById('userTableBody');
     const userNoData = document.getElementById('userNoDataMessage');
     const userCount = document.getElementById('user-reg-count');
@@ -1819,9 +1819,9 @@ window.renderUserTables = () => {
     }
 
     const overrideUidEl = document.getElementById('overrideUid');
-    const targetUid = (overrideUidEl && overrideUidEl.value && overrideUidEl.value.trim() !== '') 
-                      ? overrideUidEl.value 
-                      : currentUser?.uid;
+    const targetUid = (overrideUidEl && overrideUidEl.value && overrideUidEl.value.trim() !== '')
+        ? overrideUidEl.value
+        : currentUser?.uid;
 
     // ✨ 過濾條件：加入賽事 ID 判斷
     const myData = sorted.filter(r => {
@@ -1831,7 +1831,7 @@ window.renderUserTables = () => {
         if (overrideUidEl && overrideUidEl.value) {
             return r.userId === targetUid;
         }
-        return r.userId === currentUser?.uid; 
+        return r.userId === currentUser?.uid;
     });
 
     if (userCount) userCount.innerText = t('reg.records-count').replace('{n}', myData.length);
@@ -1868,9 +1868,9 @@ window.renderUserTables = () => {
         const actualUnit = regs[0].unit;
         const actualSubTeam = regs[0].subTeam || '';
         const displayUnitName = actualSubTeam ? `${actualUnit}${actualSubTeam}` : actualUnit;
-        
+
         const tour = appData.tournaments.find(t => t.id === regs[0].tournamentId) || {};
-        const requireId = !!(tour.groupSettings && Object.values(tour.groupSettings).some(item => 
+        const requireId = !!(tour.groupSettings && Object.values(tour.groupSettings).some(item =>
             Object.values(item).some(g => g.requireId === 'true')
         ));
 
@@ -1881,7 +1881,7 @@ window.renderUserTables = () => {
             const itemOrderList = tour.itemOrder || [];
             const itemIndexA = itemOrderList.indexOf(itemA);
             const itemIndexB = itemOrderList.indexOf(itemB);
-            
+
             if (itemIndexA !== -1 && itemIndexB !== -1 && itemIndexA !== itemIndexB) return itemIndexA - itemIndexB;
             if (itemIndexA !== -1 && itemIndexB === -1) return -1;
             if (itemIndexA === -1 && itemIndexB !== -1) return 1;
@@ -1914,7 +1914,7 @@ window.renderUserTables = () => {
             const timeA = new Date(birthA).getTime();
             const timeB = new Date(birthB).getTime();
 
-            if (!isNaN(timeA) && !isNaN(timeB)) return timeA - timeB; 
+            if (!isNaN(timeA) && !isNaN(timeB)) return timeA - timeB;
             return birthA.localeCompare(birthB, 'zh-TW');
         });
 
@@ -1939,7 +1939,7 @@ window.renderUserTables = () => {
         const safeUnitId = `unit-group-${safeKeyBase}`;
         const cardId = `user-card-${safeKeyBase}`;
         currentCardIds.add(cardId); // 記錄這張卡片應該存在
-        
+
         const encodedUnit = encodeURIComponent(unitKey);
         const jsSafeUnitName = actualUnit.replace(/'/g, "\\'").replace(/"/g, "&quot;");
         const jsSafeSubTeam = actualSubTeam.replace(/'/g, "\\'").replace(/"/g, "&quot;");
@@ -2018,7 +2018,7 @@ window.renderUserTables = () => {
 
             const namesArr = (r.playerName || '').split(' / ');
             const idsArr = (r.idNumber || '').split(' / ');
-            const birthsArr = (r.birthday || '').split(' / ');            
+            const birthsArr = (r.birthday || '').split(' / ');
             const proxyBadge = r.proxyBy ? `<span class="mr-1.5 text-[10px] bg-purple-50 text-purple-600 border border-purple-200 px-1.5 py-0.5 rounded font-black inline-block align-middle relative -top-[1px]"><i class="fas fa-user-shield mr-1"></i>代加</span>` : '';
             const nameHtml = namesArr.map((n, idx) => `
                 <div class="mb-1">
@@ -2133,7 +2133,7 @@ window.renderUserTables = () => {
                 </div>
                 ${mobileCardsHtml}
             </div> `;
-            
+
         // ✨ DOM Diffing 邏輯：有差異才更新
         let unitCard = document.getElementById(cardId);
         if (!unitCard) {
@@ -2149,7 +2149,7 @@ window.renderUserTables = () => {
                 unitCard._rawHTML = html;
             }
             // 利用 appendChild 將已存在的卡片移到最新的排序位置
-            userBody.appendChild(unitCard); 
+            userBody.appendChild(unitCard);
         }
     });
 
@@ -2171,11 +2171,11 @@ window.currentPdfFilename = '報名總表.pdf';
 window.backFromSummary = () => {
     const summaryContainer = document.getElementById('summary-content');
     if (summaryContainer) {
-        summaryContainer.innerHTML = ''; 
+        summaryContainer.innerHTML = '';
     }
-    
+
     document.title = '韻動國際 賽事報名系統';
-    
+
     if (window.navigate) window.navigate(window.lastPageBeforePrint || 'home');
 };
 
@@ -2201,7 +2201,7 @@ window.downloadPDF = async () => { // ✨ 加入 async
         try {
             const html2pdfModule = await import('html2pdf.js');
             // 注意 html2pdf 的 default 導出問題
-            window.html2pdf = html2pdfModule.default || html2pdfModule; 
+            window.html2pdf = html2pdfModule.default || html2pdfModule;
         } catch (e) {
             alert("PDF 匯出套件載入失敗，請確認網路狀態後重試！");
             btn.disabled = false;
@@ -2212,7 +2212,7 @@ window.downloadPDF = async () => { // ✨ 加入 async
 
     // 3. ✨ 強制設定 PDF 容器中文字型，並稍微延遲以利渲染器完全排版完畢
     content.style.fontFamily = "'Noto Sans TC', 'Microsoft JhengHei', sans-serif";
-    
+
     // 解決一些在部分手機/瀏覽器中可能發生的渲染延遲跑版問題
     await new Promise(resolve => setTimeout(resolve, 250));
 
@@ -2220,9 +2220,9 @@ window.downloadPDF = async () => { // ✨ 加入 async
         margin: 5,
         filename: window.currentPdfFilename,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-            scale: 2, 
-            useCORS: true, 
+        html2canvas: {
+            scale: 2,
+            useCORS: true,
             windowWidth: 800,
             logging: false,
             letterRendering: true // 優化文字排版鋸齒
@@ -2295,11 +2295,11 @@ window.printTeamSummary = (tourId, unit, subTeam = '', printMode = null) => {
         const birthB = (b.birthday || '').split(' / ')[0];
         const timeA = new Date(birthA).getTime();
         const timeB = new Date(birthB).getTime();
-        if (!isNaN(timeA) && !isNaN(timeB)) return timeA - timeB; 
+        if (!isNaN(timeA) && !isNaN(timeB)) return timeA - timeB;
         return birthA.localeCompare(birthB, 'zh-TW');
     });
 
-    const requireId = !!(tour.groupSettings && Object.values(tour.groupSettings).some(item => 
+    const requireId = !!(tour.groupSettings && Object.values(tour.groupSettings).some(item =>
         Object.values(item).some(g => g.requireId === 'true')
     ));
     const getZh = (str) => typeof str === 'string' ? str.split(',')[0].trim() : str;
@@ -2312,7 +2312,7 @@ window.printTeamSummary = (tourId, unit, subTeam = '', printMode = null) => {
             : (Number(r.fee) || 0);
 
         totalFee += correctFee;
-        
+
         const namesArr = (r.playerName || '').split(' / ');
         const idsArr = (r.idNumber || '').split(' / ');
         const birthsArr = (r.birthday || '').split(' / ');
@@ -2336,7 +2336,7 @@ window.printTeamSummary = (tourId, unit, subTeam = '', printMode = null) => {
 
     const leader = regs[0].leader || '';
     const coach = [regs[0].coach1, regs[0].coach2, regs[0].coach3].filter(c => c).join('、') || '';
-    const manager = regs[0].manager || ''; 
+    const manager = regs[0].manager || '';
     const phone = regs[0].phone || '未提供';
 
     // ✨定義寬度百分比
@@ -2349,8 +2349,8 @@ window.printTeamSummary = (tourId, unit, subTeam = '', printMode = null) => {
     const w_fee = "12%";      // 費用
 
     // 如果不收集身分證，將其比例分配給姓名與級別
-    const idHeaderHtml = requireId 
-        ? `<th style="border:1px solid #ccc; padding: 10px; width: ${w_id};">身分證/護照</th>` 
+    const idHeaderHtml = requireId
+        ? `<th style="border:1px solid #ccc; padding: 10px; width: ${w_id};">身分證/護照</th>`
         : '';
 
     const finalW_name = requireId ? w_name : "22%";
@@ -2428,8 +2428,8 @@ window.adminAddRecord = async (prefillEmail = null, prefillUnit = null, prefillS
 
     if (!tourId) return alert('請先選擇一場賽事！');
 
-    const tour = appData.tournaments.find(t => t.id === tourId) || 
-                 (appData.deletedTournaments && appData.deletedTournaments.find(t => t.id === tourId));
+    const tour = appData.tournaments.find(t => t.id === tourId) ||
+        (appData.deletedTournaments && appData.deletedTournaments.find(t => t.id === tourId));
     if (!tour) return;
 
     let targetUid = currentUser.uid;
@@ -2437,7 +2437,7 @@ window.adminAddRecord = async (prefillEmail = null, prefillUnit = null, prefillS
 
     if (!prefillEmail) {
         const inputEmail = prompt("請輸入這筆資料要歸屬的教練帳號 (Email)：\n(這會將報名資料掛在該教練帳號下，讓他可以自行管理。)\n\n若留空，則會記錄在您的管理員帳號下。");
-        if (inputEmail === null) return; 
+        if (inputEmail === null) return;
         if (inputEmail.trim() !== '') {
             prefillEmail = inputEmail.trim().toLowerCase();
         }
@@ -2480,7 +2480,7 @@ window.adminAddRecord = async (prefillEmail = null, prefillUnit = null, prefillS
         overrideEmailEl.type = 'hidden'; overrideEmailEl.id = 'overrideEmail';
         document.getElementById('registrationForm').appendChild(overrideEmailEl);
     }
-    
+
     overrideUidEl.value = targetUid;
     overrideEmailEl.value = finalEmail;
 
@@ -2497,8 +2497,8 @@ window.adminAddRecord = async (prefillEmail = null, prefillUnit = null, prefillS
 
     if (prefillUnit) {
         document.getElementById('unit').value = prefillUnit;
-        if (prefillSubTeam) document.getElementById('subTeam').value = prefillSubTeam; 
-        
+        if (prefillSubTeam) document.getElementById('subTeam').value = prefillSubTeam;
+
         const pastReg = appData.registrations.find(r => r.unit === prefillUnit && (r.subTeam || '') === (prefillSubTeam || '') && r.email === finalEmail);
         if (pastReg) {
             document.getElementById('phone').value = pastReg.phone || '';
@@ -2534,8 +2534,8 @@ window.adminAddRecord = (prefillEmail = null, prefillUnit = null, prefillSubTeam
 
     if (!tourId) return alert('請先選擇一場賽事！');
 
-    const tour = appData.tournaments.find(t => t.id === tourId) || 
-                 (appData.deletedTournaments && appData.deletedTournaments.find(t => t.id === tourId));
+    const tour = appData.tournaments.find(t => t.id === tourId) ||
+        (appData.deletedTournaments && appData.deletedTournaments.find(t => t.id === tourId));
     if (!tour) return;
 
     let targetUid = currentUser.uid;
@@ -2543,7 +2543,7 @@ window.adminAddRecord = (prefillEmail = null, prefillUnit = null, prefillSubTeam
 
     if (!prefillEmail) {
         const inputEmail = prompt("請輸入這筆資料要歸屬的教練帳號 (Email)：\n(這會將報名資料掛在該教練帳號下，讓他可以自行管理。)\n\n若留空，則會記錄在您的管理員帳號下。");
-        if (inputEmail === null) return; 
+        if (inputEmail === null) return;
         if (inputEmail.trim() !== '') {
             prefillEmail = inputEmail.trim().toLowerCase();
         }
@@ -2572,7 +2572,7 @@ window.adminAddRecord = (prefillEmail = null, prefillUnit = null, prefillSubTeam
         overrideEmailEl.type = 'hidden'; overrideEmailEl.id = 'overrideEmail';
         document.getElementById('registrationForm').appendChild(overrideEmailEl);
     }
-    
+
     overrideUidEl.value = targetUid;
     overrideEmailEl.value = finalEmail;
 
@@ -2590,7 +2590,7 @@ window.adminAddRecord = (prefillEmail = null, prefillUnit = null, prefillSubTeam
     if (prefillUnit) {
         document.getElementById('unit').value = prefillUnit;
         if (prefillSubTeam) document.getElementById('subTeam').value = prefillSubTeam; // 填入分隊
-        
+
         // 修正：連同分隊一起過濾歷史教練資料
         const pastReg = appData.registrations.find(r => r.unit === prefillUnit && (r.subTeam || '') === (prefillSubTeam || '') && r.email === finalEmail);
         if (pastReg) {
@@ -2627,7 +2627,7 @@ window.adminAddRecord = (prefillEmail = null, prefillUnit = null, prefillSubTeam
 
 window.editRecord = (id) => {
     // 從目前已經合併的快取中找資料
-    const r = appData.registrations.find(r => r.id === id); 
+    const r = appData.registrations.find(r => r.id === id);
     if (!r) {
         console.error("找不到該筆紀錄 ID:", id);
         return alert("系統找不到該筆資料，請重新整理頁面再試。");
@@ -2662,16 +2662,16 @@ window.editRecord = (id) => {
     document.getElementById('phone').value = r.phone || '';
     document.getElementById('leader').value = r.leader || '';
     document.getElementById('manager').value = r.manager || '';
-    document.getElementById('coach1').value = r.coach1; 
-    document.getElementById('coach2').value = r.coach2 || ''; 
+    document.getElementById('coach1').value = r.coach1;
+    document.getElementById('coach2').value = r.coach2 || '';
     document.getElementById('coach3').value = r.coach3 || '';
     document.getElementById('subTeam').value = r.subTeam || '';
 
     // 依序觸發項目與組別的連動
-    document.getElementById('item').value = r.item; 
-    window.onItemChange(); 
-    document.getElementById('group').value = r.group; 
-    window.onGroupChange(); 
+    document.getElementById('item').value = r.item;
+    window.onItemChange();
+    document.getElementById('group').value = r.group;
+    window.onGroupChange();
     document.getElementById('level').value = r.level;
 
     // 分割並填入選手資料
@@ -2683,9 +2683,9 @@ window.editRecord = (id) => {
         const nInput = document.getElementById(`playerName_${i}`);
         const bInput = document.getElementById(`birthday_${i}`);
         const iInput = document.getElementById(`idNumber_${i}`);
-        
+
         if (nInput) nInput.value = n;
-        
+
         if (bInput) {
             bInput.value = births[i] || '';
             bInput.dataset.rawInput = births[i] || '';
@@ -2693,12 +2693,12 @@ window.editRecord = (id) => {
                 bInput._flatpickr.setDate(births[i] || '');
             }
         }
-        
+
         if (iInput) iInput.value = ids[i] || '';
     });
 
     document.getElementById('editRecordId').value = id;
-    
+
     // ✨ 3. 強制重新渲染下方表格，使其根據剛剛填入的 overrideUid 顯示該使用者的所有紀錄
     if (window.renderUserTables) window.renderUserTables();
 
@@ -2718,7 +2718,7 @@ window.editRecord = (id) => {
         }
         cancelBtn.classList.remove('hidden');
     }
-    
+
     document.getElementById('edit-badge')?.classList.remove('hidden');
     window.checkTournamentStatus();
 
@@ -2733,11 +2733,11 @@ window.editRecord = (id) => {
 
 window.cancelEdit = () => {
     document.getElementById('editRecordId').value = '';
-    
+
     // ✨ 修正 1：完整重置整個表單（包含單位、教練、電話等所有欄位）
     const form = document.getElementById('registrationForm');
     if (form) form.reset();
-    
+
     // 清除代為報名的身分暫存
     const overrideUidEl = document.getElementById('overrideUid');
     const overrideEmailEl = document.getElementById('overrideEmail');
@@ -2747,11 +2747,11 @@ window.cancelEdit = () => {
     // 動態產生的選手欄位也清空
     const playerContainer = document.getElementById('dynamic-players-container');
     if (playerContainer) playerContainer.innerHTML = '';
-    
+
     const cancelBtn = document.getElementById('btn-cancel-edit');
     if (cancelBtn) cancelBtn.classList.add('hidden');
     document.getElementById('edit-badge')?.classList.add('hidden');
-    
+
     window.checkTournamentStatus();
 
     // 執行返回邏輯，並確保表格重新渲染
@@ -2763,13 +2763,13 @@ window.cancelEdit = () => {
     } else {
         // ✨ 修正 2：如果本來就在前台，取消後強制重繪表格，確保顯示回「自己」的資料
         if (window.renderUserTables) window.renderUserTables();
-        
+
         const tableBody = document.getElementById('userTableBody');
         if (tableBody) {
             tableBody.closest('.bg-white').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }
-    
+
     // 清除記憶
     window.sourcePageForEdit = null;
 };
@@ -2809,7 +2809,7 @@ window.openUploadSummaryModal = (tId, unit, subTeam) => {
     document.getElementById('upload-summary-unit-display').innerText = displayUnit;
 
     // 尋找已有的上傳紀錄 (一般使用者端使用 myUnitSubmissions)
-    const sub = (appData.myUnitSubmissions || []).find(s => 
+    const sub = (appData.myUnitSubmissions || []).find(s =>
         s.tournamentId === tId && s.unit === unit && s.subTeam === subTeam
     );
 
@@ -2857,7 +2857,7 @@ window.openUploadSummaryModal = (tId, unit, subTeam) => {
     // 🔒 安全鎖定邏輯：僅在「已確認(verified)」時才禁止修改；上傳後待審核仍開放使用者修改或刪除
     const isLocked = sub && sub.status === 'verified';
     const btnSubmit = document.getElementById('btnSubmitUploadSummary');
-    
+
     if (isLocked) {
         if (btnSubmit) btnSubmit.classList.add('hidden');
         document.querySelectorAll('#uploadSummaryModal button[onclick*="click()"]').forEach(b => b.classList.add('hidden'));
@@ -2895,7 +2895,7 @@ window.openUploadRemittanceModal = (tId, unit, subTeam) => {
     document.getElementById('upload-remittance-unit-display').innerText = displayUnit;
 
     // 尋找已有的上傳紀錄 (一般使用者端使用 myUnitSubmissions)
-    const sub = (appData.myUnitSubmissions || []).find(s => 
+    const sub = (appData.myUnitSubmissions || []).find(s =>
         s.tournamentId === tId && s.unit === unit && s.subTeam === subTeam
     );
 
@@ -2943,7 +2943,7 @@ window.openUploadRemittanceModal = (tId, unit, subTeam) => {
     // 🔒 安全鎖定邏輯：僅在「已確認(verified)」時才禁止修改；上傳後待審核仍開放使用者修改或刪除
     const isLocked = sub && sub.status === 'verified';
     const btnSubmit = document.getElementById('btnSubmitUploadRemittance');
-    
+
     if (isLocked) {
         if (btnSubmit) btnSubmit.classList.add('hidden');
         document.querySelectorAll('#uploadRemittanceModal button[onclick*="click()"]').forEach(b => b.classList.add('hidden'));
@@ -2980,7 +2980,7 @@ window.compressImage = (file, maxWidth = 1200, quality = 0.75) => {
             resolve(file);
             return;
         }
-        
+
         const reader = new FileReader();
         reader.onerror = () => reject(new Error("檔案讀取錯誤"));
         reader.onload = (event) => {
@@ -2991,13 +2991,13 @@ window.compressImage = (file, maxWidth = 1200, quality = 0.75) => {
                     const canvas = document.createElement('canvas');
                     let width = img.width;
                     let height = img.height;
-                    
+
                     // 等比例縮小
                     if (width > maxWidth) {
                         height = Math.round((height * maxWidth) / width);
                         width = maxWidth;
                     }
-                    
+
                     canvas.width = width;
                     canvas.height = height;
                     const ctx = canvas.getContext('2d');
@@ -3006,7 +3006,7 @@ window.compressImage = (file, maxWidth = 1200, quality = 0.75) => {
                         return;
                     }
                     ctx.drawImage(img, 0, 0, width, height);
-                    
+
                     canvas.toBlob((blob) => {
                         if (!blob) {
                             reject(new Error("圖片轉檔 Blob 失敗"));
@@ -3074,26 +3074,26 @@ window.handleUploadSubFile = async (inputEl, fileType) => {
     const cleanFileName = file.name.replace(/[^\w.\-]/g, '_').replace(/_+/g, '_');
     const safeTourId = String(window.currentSubTourId).replace(/[^a-zA-Z0-9_-]/g, '_');
     const cleanUnitKey = `${window.currentSubUnit}_${window.currentSubSubTeam || ''}`.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_');
-    
+
     const path = `artifacts/${appIdStr}/users/${currentUser.uid}/${safeTourId}/${cleanUnitKey}/${fileType}_${Date.now()}_${cleanFileName}`;
-    
+
     const storageRef = ref(storage, path);
     const uploadTask = uploadBytesResumable(storageRef, file);
 
-    uploadTask.on('state_changed', 
+    uploadTask.on('state_changed',
         (snapshot) => {
             const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
             percentSpan.innerText = progress + '%';
-        }, 
+        },
         (error) => {
             console.error("上傳失敗:", error);
             window.showToast("❌ 上傳失敗：" + error.message, "error");
             progressDiv.classList.add('hidden');
-        }, 
+        },
         async () => {
             const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
             progressDiv.classList.add('hidden');
-            
+
             // 上傳成功後，且新檔案可用時，才刪除原本 Storage 中的舊檔案，避免爆滿與斷圖
             if (oldUrl) {
                 try {
@@ -3111,7 +3111,7 @@ window.handleUploadSubFile = async (inputEl, fileType) => {
                 window.tempSubRemittanceUrl = downloadURL;
                 window.tempSubRemittanceName = file.name;
             }
-            
+
             previewDiv.classList.remove('hidden');
             document.getElementById(`upload-${fileType}-filename`).innerText = file.name;
             document.getElementById(`upload-${fileType}-preview-link`).href = downloadURL;
@@ -3123,7 +3123,7 @@ window.handleUploadSubFile = async (inputEl, fileType) => {
 
 window.removeUploadSubFile = async (fileType) => {
     // 再次確認是否已經鎖定：僅「已確認 (verified)」才禁止刪除
-    const sub = (appData.myUnitSubmissions || []).find(s => 
+    const sub = (appData.myUnitSubmissions || []).find(s =>
         s.tournamentId === window.currentSubTourId && s.unit === window.currentSubUnit && s.subTeam === window.currentSubSubTeam
     );
     if (sub && sub.status === 'verified') {
@@ -3156,7 +3156,7 @@ window.removeUploadSubFile = async (fileType) => {
 
     try {
         const urlToDelete = fileType === 'summary' ? window.tempSubSummaryUrl : window.tempSubRemittanceUrl;
-        
+
         if (urlToDelete) {
             try {
                 await deleteObject(ref(storage, urlToDelete));
@@ -3243,7 +3243,7 @@ window.submitUploadSubmission = async (fileType) => {
             .replace(/=+$/g, '');
 
         const docRef = doc(db, 'artifacts', appIdStr, 'public', 'data', 'unit_submissions', submissionId);
-        
+
         const existingSub = (appData.myUnitSubmissions || []).find(s => s.id === submissionId);
         const wasRejected = existingSub && existingSub.status === 'rejected';
         const isResubmitted = wasRejected || (existingSub && existingSub.isResubmitted === true) || !!existingSub;
@@ -3281,7 +3281,7 @@ window.submitUploadSubmission = async (fileType) => {
         } else {
             window.closeUploadRemittanceModal();
         }
-        
+
         if (window.renderMyRecordsPage) window.renderMyRecordsPage();
 
     } catch (err) {
@@ -3300,9 +3300,9 @@ window.submitUploadSubmission = async (fileType) => {
 // ==========================================
 
 export function initFrontend() {
-    
+
     // ✨ 核心重構：集中管理狀態訂閱 (Data Binding)
-    
+
     // 1. 當「報名資料」更新時，自動重繪相關表格
     subscribe('registrationsUpdated', (regs) => {
         if (document.getElementById('page-register')?.classList.contains('active')) {
@@ -3368,7 +3368,7 @@ export function initFrontend() {
         const inputUnit = document.getElementById('unit')?.value;
         if (playerName || inputUnit) {
             e.preventDefault();
-            e.returnValue = ''; 
+            e.returnValue = '';
         }
     });
 
@@ -3377,10 +3377,10 @@ export function initFrontend() {
         const phoneInput = document.getElementById(id);
         if (phoneInput) {
             phoneInput.addEventListener('input', (e) => {
-                let val = e.target.value.replace(/\D/g, ''); 
-                
+                let val = e.target.value.replace(/\D/g, '');
+
                 if (val.startsWith('09')) {
-                    val = val.substring(0, 10); 
+                    val = val.substring(0, 10);
                     if (val.length > 7) {
                         e.target.value = `${val.substring(0, 4)}-${val.substring(4, 7)}-${val.substring(7, 10)}`;
                     } else if (val.length > 4) {
@@ -3390,7 +3390,7 @@ export function initFrontend() {
                     }
                 } else if (val.startsWith('0')) {
                     val = val.substring(0, 10);
-                    let areaLen = 2; 
+                    let areaLen = 2;
                     if (['037', '049', '082', '089'].some(p => val.startsWith(p))) areaLen = 3;
                     if (val.startsWith('0836')) areaLen = 4;
 
@@ -3407,7 +3407,7 @@ export function initFrontend() {
                         e.target.value = area;
                     }
                 } else if (val.length > 0) {
-                    e.target.value = val; 
+                    e.target.value = val;
                 } else {
                     e.target.value = '';
                 }
@@ -3434,7 +3434,7 @@ export function initFrontend() {
                     phoneInput.classList.remove('border-red-500', 'ring-2', 'ring-red-500/20', 'bg-red-50', 'text-red-700');
                 };
 
-                if (!val) return clearError(); 
+                if (!val) return clearError();
 
                 if (val.startsWith('09')) {
                     if (val.length !== 10) return showError('手機號碼長度錯誤！請輸入完整的 10 碼數字 (例: 0912-345-678)');
@@ -3442,7 +3442,7 @@ export function initFrontend() {
                     if (!val.startsWith('0')) return showError('市話請加上區碼！<br><span class="text-[10px] text-red-400 tracking-wider">(例: 台北請加 02，如 02-2969-6025)</span>');
                     if (val.length < 9 || val.length > 10) return showError('市話號碼長度異常！請確認是否漏打或多打。');
                 }
-                return clearError(); 
+                return clearError();
             });
         }
     });
@@ -3467,8 +3467,8 @@ export function initFrontend() {
     const registrationForm = document.getElementById('registrationForm');
     if (registrationForm) {
         registrationForm.addEventListener('submit', async (e) => {
-            e.preventDefault(); 
-            
+            e.preventDefault();
+
             if (!window.validateUnit()) {
                 document.getElementById('unit')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 return;
@@ -3478,10 +3478,10 @@ export function initFrontend() {
             if (phoneInput) {
                 let phoneVal = phoneInput.value.replace(/\D/g, '');
                 if (phoneVal) {
-                    if ((phoneVal.startsWith('09') && phoneVal.length !== 10) || 
+                    if ((phoneVal.startsWith('09') && phoneVal.length !== 10) ||
                         (!phoneVal.startsWith('09') && (!phoneVal.startsWith('0') || phoneVal.length < 9 || phoneVal.length > 10))) {
                         phoneInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        phoneInput.dispatchEvent(new Event('blur')); 
+                        phoneInput.dispatchEvent(new Event('blur'));
                         return;
                     }
                 }
@@ -3490,34 +3490,34 @@ export function initFrontend() {
             let hasError = false;
             let firstErrorEl = null;
             const names = [], births = [], ids = [];
-            
+
             const selectedItemName = document.getElementById('item').value;
             const selectedGroupName = document.getElementById('group').value;
-            
+
             let gSet = {};
             if (selectedTournament.groupSettings && selectedTournament.groupSettings[selectedItemName] && selectedTournament.groupSettings[selectedItemName][selectedGroupName]) {
                 gSet = selectedTournament.groupSettings[selectedItemName][selectedGroupName];
             } else if (selectedTournament.itemSettings && selectedTournament.itemSettings[selectedItemName]) {
                 gSet = selectedTournament.itemSettings[selectedItemName];
             }
-            
+
             let requireId = gSet.requireId === 'true';
 
             document.querySelectorAll('.dynamic-player-name').forEach(input => {
-                let safeName = input.value.replace(/\//g, ' ').trim();                
-                input.value = safeName; 
+                let safeName = input.value.replace(/\//g, ' ').trim();
+                input.value = safeName;
 
-                if(!safeName) { hasError = true; firstErrorEl = firstErrorEl || input; }
+                if (!safeName) { hasError = true; firstErrorEl = firstErrorEl || input; }
                 names.push(sanitizeHTML(safeName));
             });
 
             document.querySelectorAll('.dynamic-birthday').forEach(input => {
-                if(!window.validateSingleBirthday(input, false, gSet)) { hasError = true; firstErrorEl = firstErrorEl || input; }
+                if (!window.validateSingleBirthday(input, false, gSet)) { hasError = true; firstErrorEl = firstErrorEl || input; }
                 births.push(sanitizeHTML(input.value));
             });
 
             document.querySelectorAll('.dynamic-id').forEach(input => {
-                if(!window.validateSingleId(input, requireId)) { hasError = true; firstErrorEl = firstErrorEl || input; }
+                if (!window.validateSingleId(input, requireId)) { hasError = true; firstErrorEl = firstErrorEl || input; }
                 ids.push(sanitizeHTML(input.value).toUpperCase());
             });
 
@@ -3575,20 +3575,20 @@ export function initFrontend() {
             // ✨ 重複報名檢查邏輯
             const selectedLevelName = document.getElementById('level').value;
             const editId = document.getElementById('editRecordId').value;
-            
+
             // 找出同賽事中，除了目前正在編輯的這筆以外的所有紀錄
             const tournamentRegs = (appData.registrations || []).filter(r =>
-                r.tournamentId === selectedTournament.id && r.id !== editId 
+                r.tournamentId === selectedTournament.id && r.id !== editId
             );
 
             if (tournamentRegs.length > 0) {
                 let duplicatePlayerName = null;
                 let duplicateFound = false;
-                let duplicateDetailInfo = ''; 
+                let duplicateDetailInfo = '';
 
                 // 🌟 神奇過濾器：將所有字串轉小寫、去除所有空白
                 const normalize = (str) => (str || '').toString().replace(/\s+/g, '').toLowerCase();
-                
+
                 // 🌟 日期標準化：將 2026/5/3 強制轉為 2026/05/03 確保比對精準
                 const formatBirth = (dStr) => {
                     if (!dStr) return '';
@@ -3613,7 +3613,7 @@ export function initFrontend() {
                             const nameMatch = histNames[j] === currentName;
                             const birthMatch = histBirths[j] === currentBirth;
                             const idMatch = requireId ? (histIds[j] === currentId) : true;
-                            
+
                             // 只要姓名 + 生日 (+ 證號) 都吻合，就是同一個人
                             if (nameMatch && birthMatch && idMatch) {
                                 personMatchIndex = j;
@@ -3624,15 +3624,15 @@ export function initFrontend() {
                         // 如果發現是同一個人，且報名了同一個項目
                         if (personMatchIndex !== -1 && r.item === selectedItemName) {
                             duplicateDetailInfo = `${getLang(r.item)} - ${getLang(r.group)} - ${getLang(r.level)}`;
-                            return true; 
+                            return true;
                         }
                         return false;
                     });
 
                     if (isDuplicate) {
-                        duplicatePlayerName = names[i]; 
+                        duplicatePlayerName = names[i];
                         duplicateFound = true;
-                        break; 
+                        break;
                     }
                 }
 
@@ -3649,7 +3649,7 @@ export function initFrontend() {
                         </div>
                         <div class="text-red-700 font-black mt-4">請問您確定要「強制重複提交」這筆資料嗎？</div>
                     `;
-                    
+
                     const isConfirmed = await window.showCustomConfirm(t('dup.title'), confirmMsg, t('dup.btn-ok'), t('dup.btn-cancel'));
                     if (!isConfirmed) return;
                 }
@@ -3684,9 +3684,9 @@ export function initFrontend() {
                 level: document.getElementById('level').value,
                 fee: itemFee,
                 time: new Date().toLocaleString(),
-                userId: targetUid, 
+                userId: targetUid,
                 email: overrideEmail || currentUser.email || '未知帳號',
-                proxyBy: isProxyAction ? currentUser.email : null 
+                proxyBy: isProxyAction ? currentUser.email : null
             };
 
             console.log("準備送出的資料：", rec);
@@ -3697,7 +3697,7 @@ export function initFrontend() {
             const minLoadingTime = new Promise(resolve => setTimeout(resolve, 600));
 
             try {
-                let currentDocId = editId; 
+                let currentDocId = editId;
 
                 // 準備 Callable Function 的封包
                 const callPayload = {
@@ -3714,17 +3714,17 @@ export function initFrontend() {
                     saveRegistration(callPayload),
                     minLoadingTime
                 ]);
-                
+
                 const { id, fee } = callResult[0].data;
                 currentDocId = id;
                 rec.fee = fee; // 套用後端計算的權威費用
 
-                if (editId) { 
+                if (editId) {
                     const updatedReg = { id: editId, ...rec };
                     const idx = appData.registrations.findIndex(r => r.id === editId);
                     if (idx !== -1) appData.registrations[idx] = updatedReg;
                     else appData.registrations.push(updatedReg);
-                    
+
                     if (window.adminCurrentTourRegs) {
                         const aIdx = window.adminCurrentTourRegs.findIndex(r => r.id === editId);
                         if (aIdx !== -1) window.adminCurrentTourRegs[aIdx] = updatedReg;
@@ -3736,11 +3736,11 @@ export function initFrontend() {
                     }
 
                     window.showToast('🎉 報名資料修改成功！');
-                    window.cancelEdit(); 
-                    
-                } else { 
+                    window.cancelEdit();
+
+                } else {
                     const newReg = { id: currentDocId, ...rec };
-                    
+
                     const idx = appData.registrations.findIndex(r => r.id === currentDocId);
                     if (idx !== -1) {
                         appData.registrations[idx] = newReg;
@@ -3753,7 +3753,7 @@ export function initFrontend() {
                         if (aIdx !== -1) window.adminCurrentTourRegs[aIdx] = newReg;
                         else window.adminCurrentTourRegs.push(newReg);
                     }
-                    
+
                     if (window.myOwnRegs && rec.userId === currentUser.uid) {
                         const mIdx = window.myOwnRegs.findIndex(r => r.id === currentDocId);
                         if (mIdx !== -1) window.myOwnRegs[mIdx] = newReg;
@@ -3782,16 +3782,16 @@ export function initFrontend() {
                 // ==========================================
                 const syncPromises = [];
                 appData.registrations.forEach(r => {
-                    if (r.id !== currentDocId && 
-                        r.tournamentId === rec.tournamentId && 
-                        r.userId === targetUid && 
-                        r.unit === rec.unit && 
+                    if (r.id !== currentDocId &&
+                        r.tournamentId === rec.tournamentId &&
+                        r.userId === targetUid &&
+                        r.unit === rec.unit &&
                         (r.subTeam || '') === (rec.subTeam || '')) {
-                        
-                        if (r.phone !== rec.phone || r.leader !== rec.leader || 
-                            r.manager !== rec.manager || r.coach1 !== rec.coach1 || 
+
+                        if (r.phone !== rec.phone || r.leader !== rec.leader ||
+                            r.manager !== rec.manager || r.coach1 !== rec.coach1 ||
                             r.coach2 !== rec.coach2 || r.coach3 !== rec.coach3) {
-                            
+
                             r.phone = rec.phone;
                             r.leader = rec.leader;
                             r.manager = rec.manager;
@@ -3830,28 +3830,28 @@ export function initFrontend() {
                     updatedAt: Date.now()
                 };
                 const existingProfile = (appData.teamProfiles || []).find(p => p.unit === rec.unit && (p.subTeam || '') === rec.subTeam && p.userId === targetUid);
-                
+
                 if (existingProfile) {
-                    setDoc(doc(db, 'artifacts', appIdStr, 'public', 'data', 'team_profiles', existingProfile.id), profileData, { merge: true }).catch(e=>console.error('名單更新失敗', e));
+                    setDoc(doc(db, 'artifacts', appIdStr, 'public', 'data', 'team_profiles', existingProfile.id), profileData, { merge: true }).catch(e => console.error('名單更新失敗', e));
                 } else {
-                    addDoc(getDbPath('team_profiles'), profileData).catch(e=>console.error('名單收錄失敗', e));
+                    addDoc(getDbPath('team_profiles'), profileData).catch(e => console.error('名單收錄失敗', e));
                 }
 
                 emit('registrationsUpdated', appData.registrations);
 
-            } catch (err) { 
+            } catch (err) {
                 console.error("🔥 報名寫入被 Firebase 拒絕：", err);
-                
+
                 if (analytics) {
                     logEvent(analytics, 'registration_error', {
                         error_message: err.message,
                         tournament_name: rec?.tournamentName || '未知賽事'
                     });
                 }
-                
-                window.showToast(`儲存失敗！${err.message}`, 'error'); 
+
+                window.showToast(`儲存失敗！${err.message}`, 'error');
             }
-            
+
             loading?.classList.add('hidden');
         });
     }
@@ -3860,7 +3860,7 @@ export function initFrontend() {
     if (btnConfirmDelete) {
         const newBtn = btnConfirmDelete.cloneNode(true);
         btnConfirmDelete.parentNode.replaceChild(newBtn, btnConfirmDelete);
-        
+
         newBtn.addEventListener('click', async () => {
             if (recordToDelete) {
                 const isAuthValid = await verifyAuthBeforeAction();
@@ -3875,7 +3875,7 @@ export function initFrontend() {
 
                 try {
                     await deleteDoc(doc(db, 'artifacts', appIdStr, 'public', 'data', 'registrations', recordToDelete));
-                    
+
                     appData.registrations = appData.registrations.filter(r => r.id !== recordToDelete);
                     if (window.adminCurrentTourRegs) {
                         window.adminCurrentTourRegs = window.adminCurrentTourRegs.filter(r => r.id !== recordToDelete);
@@ -3922,7 +3922,7 @@ window.carouselTimer = null;
 window.moveCarousel = (direction) => {
     const track = document.getElementById('carousel-track');
     if (!track || track.children.length === 0) return;
-    
+
     // 如果正在執行過場動畫，則直接封鎖本次點擊
     if (track.dataset.isAnimating === 'true') return;
     track.dataset.isAnimating = 'true';
@@ -3934,7 +3934,7 @@ window.moveCarousel = (direction) => {
         // 向左滑動一格
         track.style.transition = 'transform 500ms ease-in-out';
         track.style.transform = `translateX(-${itemWidth}px)`;
-        
+
         setTimeout(() => {
             track.style.transition = 'none';
             track.appendChild(track.firstElementChild); // 首節點移至尾端
@@ -3952,7 +3952,7 @@ window.moveCarousel = (direction) => {
         // 啟動轉場拉回原點
         track.style.transition = 'transform 500ms ease-in-out';
         track.style.transform = 'translateX(0px)';
-        
+
         setTimeout(() => {
             track.dataset.isAnimating = 'false';
         }, 500);
@@ -3987,24 +3987,24 @@ window.startSponsorAutoPlay = () => {
 window.renderSponsorCarousel = (imageArray) => {
     const track = document.getElementById('carousel-track');
     if (!track) return;
-    
+
     // 優先順序：1. Firebase 雲端設定 (若有傳入) -> 2. Vite 自動掃描出來的圖片陣列
-    const images = (imageArray && imageArray.length > 0) 
-        ? imageArray 
+    const images = (imageArray && imageArray.length > 0)
+        ? imageArray
         : autoSponsorImages;
-    
+
     track.innerHTML = '';
     track.style.transition = 'none';
     track.style.transform = 'translateX(0px)';
     track.dataset.isAnimating = 'false';
-    
+
     const safeLogoSrc = document.querySelector('nav img[alt="WEGO SPORTING Logo"]')?.src || '/logo.png';
-    
+
     images.forEach((imgSrcRaw) => {
         const imgSrc = imgSrcRaw.includes('/') ? imgSrcRaw : `/products/${imgSrcRaw}`;
-        
-        const card = document.createElement('div');        
-        card.className = "group relative w-[calc(50%-8px)] sm:w-[calc(33.333%-10.6px)] lg:w-[calc(25%-12px)] xl:w-[calc(20%-12.8px)] 2xl:w-[calc(16.666%-13.3px)] aspect-[4/3] bg-white/5 rounded-xl border border-white/10 hover:border-tkdBlue hover:bg-white/10 transition-all flex items-center justify-center overflow-hidden p-2 shadow-sm shrink-0";        
+
+        const card = document.createElement('div');
+        card.className = "group relative w-[calc(50%-8px)] sm:w-[calc(33.333%-10.6px)] lg:w-[calc(25%-12px)] xl:w-[calc(20%-12.8px)] 2xl:w-[calc(16.666%-13.3px)] aspect-[4/3] bg-white/5 rounded-xl border border-white/10 hover:border-tkdBlue hover:bg-white/10 transition-all flex items-center justify-center overflow-hidden p-2 shadow-sm shrink-0";
         card.innerHTML = `
             <div class="w-full h-full flex items-center justify-center bg-white rounded-lg p-2 shadow-inner overflow-hidden">
                 <img src="${imgSrc}" alt="商品照" class="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-300" onerror="this.onerror=null; this.src='${safeLogoSrc}';">

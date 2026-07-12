@@ -1,182 +1,412 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     // ==========================================
-    // 🛡️ 核心權限判斷函式 (Helper Functions)
+    // 🛡️ 核心權限判斷函式
     // ==========================================
-    function isLoggedIn() { return request.auth != null; }
-    
-    function isBlocked(appId) { 
+
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+
+    function isBlocked(appId) {
       return isLoggedIn() && (
-        ('blocked' in request.auth.token && request.auth.token.blocked == true) ||
-        exists(/databases/$(database)/documents/artifacts/$(appId)/public/data/blockedUsers/$(request.auth.uid))
+        (
+          'blocked' in request.auth.token &&
+          request.auth.token.blocked == true
+        ) ||
+        exists(
+          /databases/$(database)/documents/artifacts/$(appId)/public/data/blockedUsers/$(request.auth.uid)
+        )
       );
     }
-    
+
+    /*
+     * 注意：
+     * Firestore Security Rules 不應使用 email.lower() 進行比對，
+     * 因為該方法並非所有 Rules 環境都保證支援。
+     *
+     * 建議長期改為使用 Firebase UID 或 custom claim 判斷超級管理員。
+     */
     function isSuperAdmin() {
-      // 超級管理員信箱比對 (支援大小寫不敏感比對)
-      return isLoggedIn() && (
-        request.auth.token.email == "chao82465@gmail.com" ||
-        request.auth.token.email.lower() == "chao82465@gmail.com"
-      );
+      return isLoggedIn() &&
+        ('email' in request.auth.token) &&
+        request.auth.token.email == "chao82465@gmail.com";
     }
-    
+
     function isAdmin() {
-      return isSuperAdmin() || 
-             (isLoggedIn() && 'admin' in request.auth.token && request.auth.token.admin == true);
+      return isSuperAdmin() || (
+        isLoggedIn() &&
+        ('admin' in request.auth.token) &&
+        request.auth.token.admin == true
+      );
     }
 
     function isScopedAdmin() {
-      return isLoggedIn() && 'scopedAdmin' in request.auth.token && request.auth.token.scopedAdmin != null;
+      return isLoggedIn() &&
+        ('scopedAdmin' in request.auth.token) &&
+        request.auth.token.scopedAdmin is map &&
+        request.auth.token.scopedAdmin.keys().hasAll(['type', 'value']) &&
+        request.auth.token.scopedAdmin.get('type', '') in ['tournament', 'city'] &&
+        request.auth.token.scopedAdmin.get('value', '') is string &&
+        request.auth.token.scopedAdmin.get('value', '').size() > 0 &&
+        request.auth.token.scopedAdmin.get('value', '').size() <= 200;
     }
 
+    /*
+     * Scoped Admin 僅能操作其被授權的 tournamentId 或 city 範圍內資料。
+     */
     function isWithinAdminScope(docData) {
       let scope = request.auth.token.scopedAdmin;
-      return scope != null && (
-        (scope.type == 'tournament' && docData.get('tournamentId', '') == scope.value) ||
-        (scope.type == 'city' && docData.get('city', '') == scope.value) 
-      );
+
+      return isScopedAdmin() &&
+        docData is map &&
+        (
+          (
+            scope.get('type', '') == 'tournament' &&
+            docData.get('tournamentId', '') == scope.get('value', '')
+          ) ||
+          (
+            scope.get('type', '') == 'city' &&
+            docData.get('city', '') == scope.get('value', '')
+          )
+        );
     }
 
-    // 表單資料合法性基本防禦
-    function isValidRegistrationData(data) {
-      let hasRequired = data.keys().hasAll(['unit', 'phone', 'coach1', 'playerName', 'item', 'group', 'level', 'fee', 'birthday', 'idNumber']);
-      let validLengths = 
-        data.get('unit', '').size() <= 100 && 
-        data.get('phone', '').size() <= 30 &&
-        data.get('playerName', '').size() <= 500 && 
-        data.get('item', '').size() <= 50 && 
-        data.get('group', '').size() <= 50 &&
-        data.get('birthday', '').size() <= 200 &&
-        data.get('idNumber', '').size() <= 200;
-      let safeStrings = 
-        !data.get('unit', '').matches('.*[<>].*') && 
-        !data.get('playerName', '').matches('.*[<>].*') && 
-        !data.get('phone', '').matches('.*[<>].*');
-      let validFee = data.fee is number && data.fee >= 0 && data.fee <= 50000;
-      return hasRequired && validLengths && safeStrings && validFee;
+    function isSafeString(value, maxLength) {
+      return value is string &&
+        value.size() <= maxLength &&
+        !value.matches('.*[<>].*');
+    }
+
+    function isOptionalSafeString(data, fieldName, maxLength) {
+      return !((fieldName) in data) ||
+        isSafeString(data.get(fieldName, ''), maxLength);
+    }
+
+    /*
+     * 一般使用者可自行更新的報名聯絡資訊欄位驗證。
+     */
+    function isValidRegistrationContactData(data) {
+      return
+        isOptionalSafeString(data, 'phone', 30) &&
+        isOptionalSafeString(data, 'leader', 100) &&
+        isOptionalSafeString(data, 'manager', 100) &&
+        isOptionalSafeString(data, 'coach1', 100) &&
+        isOptionalSafeString(data, 'coach2', 100) &&
+        isOptionalSafeString(data, 'coach3', 100);
+    }
+
+    function isValidUnitSubmissionCreate(data) {
+      return
+        data.keys().hasAll([
+          'tournamentId',
+          'tournamentName',
+          'city',
+          'unit',
+          'userId',
+          'status'
+        ]) &&
+
+        data.get('tournamentId', '') is string &&
+        data.get('tournamentId', '').size() > 0 &&
+        data.get('tournamentId', '').size() <= 200 &&
+
+        data.get('tournamentName', '') is string &&
+        data.get('tournamentName', '').size() > 0 &&
+        data.get('tournamentName', '').size() <= 300 &&
+
+        data.get('city', '') is string &&
+        data.get('city', '').size() > 0 &&
+        data.get('city', '').size() <= 100 &&
+
+        isSafeString(data.get('unit', ''), 200) &&
+
+        data.get('userId', '') == request.auth.uid &&
+        data.get('status', '') == 'pending' &&
+
+        !('registeredAmount' in data) &&
+        !('adminNotes' in data) &&
+
+        data.keys().hasOnly([
+          'tournamentId',
+          'tournamentName',
+          'city',
+          'unit',
+          'subTeam',
+          'userId',
+          'email',
+          'summaryFormUrl',
+          'summaryFormFileName',
+          'remittanceUrl',
+          'remittanceFileName',
+          'uploadedAt',
+          'updatedAt',
+          'status',
+          'isResubmitted',
+          'resubmittedAt',
+          'resubmissionCount'
+        ]);
     }
 
     // ==========================================
-    // 📂 1. 賽事設定檔安全防護 (物理拆分重構)
+    // 📂 1. 賽事設定檔安全防護
     // ==========================================
-    
-    // 🔓 公開賽事資訊 (如賽事名稱、日期、地點等) ── 允許所有人讀取
+
+    /*
+     * 公開賽事資訊。
+     * 所有人可讀，但只有未被封鎖的管理員能寫入。
+     *
+     * 原本允許任一登入使用者修改 activeAdmins，
+     * 這會造成嚴重的權限提升風險，因此移除。
+     */
     match /artifacts/{appId}/public/data/settings/global {
       allow read: if true;
-      allow write: if isAdmin() || (
-        isLoggedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['activeAdmins'])
-      );
+      allow create, update, delete: if isAdmin() && !isBlocked(appId);
     }
-    
-    // 🔒 敏感人員名單 (包含 admins、blockedUsers 等) ── 僅限管理員讀寫
+
+    /*
+     * 私密設定文件。
+     */
     match /artifacts/{appId}/public/data/settings/private {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin();
+      allow create, update, delete: if isAdmin() && !isBlocked(appId);
+    }
+
+    /*
+     * private 文件底下的所有子集合，例如：
+     * artifacts/{appId}/public/data/settings/private/xxx/{docId}
+     */
+    match /artifacts/{appId}/public/data/settings/private/{document=**} {
+      allow read: if isAdmin();
+      allow create, update, delete: if isAdmin() && !isBlocked(appId);
+    }
+
+    /*
+     * 封鎖名單。
+     * isBlocked() 會透過 exists() 查詢此路徑。
+     * 一般使用者無法讀取、建立、解除封鎖或修改封鎖名單。
+     */
+    match /artifacts/{appId}/public/data/blockedUsers/{userId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if isAdmin() && !isBlocked(appId);
     }
 
     // ==========================================
     // 📂 2. 其他資料表權限規則
     // ==========================================
 
-    // 聚合統計資料表 (僅允許 Cloud Functions 寫入)
+    /*
+     * 聚合統計資料表：
+     * Cloud Functions 使用 Admin SDK 時會繞過 Security Rules，
+     * 因此前端一律不可寫入。
+     */
     match /artifacts/{appId}/public/data/user_stats/{statId} {
       allow read: if isAdmin();
-      allow write: if false; 
+      allow write: if false;
     }
 
-    // 擺一設備登入防護
+    /*
+     * 單一裝置／登入 Session 資料。
+     */
     match /artifacts/{appId}/public/data/user_sessions/{userId} {
-      allow read, write: if isLoggedIn() && request.auth.uid == userId;
+      allow read: if isLoggedIn() && request.auth.uid == userId;
+
+      allow create, update, delete: if
+        isLoggedIn() &&
+        !isBlocked(appId) &&
+        request.auth.uid == userId;
     }
 
-    // 常用隊職員名單權限
+    // ==========================================
+    // 📂 3. 常用隊職員名單
+    // ==========================================
+
     match /artifacts/{appId}/public/data/team_profiles/{profileId} {
-      allow read: if isLoggedIn() && (resource.data.userId == request.auth.uid || isAdmin() || isScopedAdmin());
-      allow create: if isLoggedIn() && !isBlocked(appId) && (request.resource.data.userId == request.auth.uid || isAdmin() || isScopedAdmin());
-      allow update: if isLoggedIn() && !isBlocked(appId) && (
-        (resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid) || 
-        isAdmin() || isScopedAdmin()
+      allow read: if isLoggedIn() && (
+        resource.data.get('userId', '') == request.auth.uid ||
+        isAdmin() ||
+        (isScopedAdmin() && isWithinAdminScope(resource.data))
       );
-      allow delete: if isLoggedIn() && !isBlocked(appId) && (resource.data.userId == request.auth.uid || isAdmin() || isScopedAdmin());
+
+      allow create: if isLoggedIn() &&
+        !isBlocked(appId) &&
+        (
+          request.resource.data.get('userId', '') == request.auth.uid ||
+          isAdmin() ||
+          (isScopedAdmin() && isWithinAdminScope(request.resource.data))
+        );
+
+      allow update: if isLoggedIn() &&
+        !isBlocked(appId) &&
+        (
+          isAdmin() ||
+
+          (
+            isScopedAdmin() &&
+            isWithinAdminScope(resource.data) &&
+            isWithinAdminScope(request.resource.data)
+          ) ||
+
+          (
+            resource.data.get('userId', '') == request.auth.uid &&
+            request.resource.data.get('userId', '') == request.auth.uid
+          )
+        );
+
+      allow delete: if isLoggedIn() &&
+        !isBlocked(appId) &&
+        (
+          resource.data.get('userId', '') == request.auth.uid ||
+          isAdmin() ||
+          (isScopedAdmin() && isWithinAdminScope(resource.data))
+        );
     }
 
-    // 報名資料表核心權限
+    // ==========================================
+    // 📂 4. 報名資料表核心權限
+    // ==========================================
+
     match /artifacts/{appId}/public/data/registrations/{regId} {
       allow read: if isLoggedIn() && (
-        resource.data.userId == request.auth.uid || 
-        isAdmin() || 
+        resource.data.get('userId', '') == request.auth.uid ||
+        isAdmin() ||
         (isScopedAdmin() && isWithinAdminScope(resource.data))
       );
-      
-      // 🔒 普通使用者建立報名必須完全透過 Callable Function。在此僅允許管理員與局部管理員直接寫入（如後台還原備份等需求）
-      allow create: if isLoggedIn() && !isBlocked(appId) && (
-        isAdmin() || 
-        (isScopedAdmin() && isWithinAdminScope(request.resource.data))
-      );
-      
-      // 🔒 限制更新權限：普通使用者只能更新自己名單的隊職員聯絡資訊，其餘核心欄位一律不可直接修改
-      allow update: if isLoggedIn() && !isBlocked(appId) && (
-        isAdmin() || 
-        (isScopedAdmin() && isWithinAdminScope(resource.data) && isWithinAdminScope(request.resource.data)) || 
+
+      /*
+       * 一般使用者不得直接建立報名資料。
+       * 必須透過 Callable Function / Cloud Functions 建立。
+       */
+      allow create: if isLoggedIn() &&
+        !isBlocked(appId) &&
         (
-          resource.data.userId == request.auth.uid && 
-          request.resource.data.userId == request.auth.uid &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'phone', 'leader', 'manager', 'coach1', 'coach2', 'coach3', 'updatedAt'
-          ])
-        )
-      );
-      
-      allow delete: if isLoggedIn() && !isBlocked(appId) && (
-        resource.data.userId == request.auth.uid || 
-        isAdmin() || 
-        (isScopedAdmin() && isWithinAdminScope(resource.data))
-      );
+          isAdmin() ||
+          (isScopedAdmin() && isWithinAdminScope(request.resource.data))
+        );
+
+      /*
+       * 一般使用者只能修改自己的聯絡資訊；
+       * 不可修改項目、組別、費用、選手姓名、賽事、歸屬帳號等核心欄位。
+       */
+      allow update: if isLoggedIn() &&
+        !isBlocked(appId) &&
+        (
+          isAdmin() ||
+
+          (
+            isScopedAdmin() &&
+            isWithinAdminScope(resource.data) &&
+            isWithinAdminScope(request.resource.data)
+          ) ||
+
+          (
+            resource.data.get('userId', '') == request.auth.uid &&
+            request.resource.data.get('userId', '') == request.auth.uid &&
+
+            request.resource.data
+              .diff(resource.data)
+              .affectedKeys()
+              .hasOnly([
+                'phone',
+                'leader',
+                'manager',
+                'coach1',
+                'coach2',
+                'coach3',
+                'updatedAt'
+              ]) &&
+
+            isValidRegistrationContactData(request.resource.data)
+          )
+        );
+
+      allow delete: if isLoggedIn() &&
+        !isBlocked(appId) &&
+        (
+          resource.data.get('userId', '') == request.auth.uid ||
+          isAdmin() ||
+          (isScopedAdmin() && isWithinAdminScope(resource.data))
+        );
     }
 
     // ==========================================
-    // 📂 3. 單位上傳報名總表與匯款紀錄安全規則
+    // 📂 5. 單位上傳報名總表與匯款紀錄
     // ==========================================
+
     match /artifacts/{appId}/public/data/unit_submissions/{subId} {
       allow read: if isLoggedIn() && (
-        resource.data.userId == request.auth.uid || 
-        isAdmin() || 
-        (isScopedAdmin() && isWithinAdminScope(resource.data))
-      );
-      allow create: if isLoggedIn() && !isBlocked(appId) && (
-        (
-          request.resource.data.userId == request.auth.uid && 
-          request.resource.data.status == 'pending' &&
-          !('registeredAmount' in request.resource.data) &&
-          !('adminNotes' in request.resource.data) &&
-          request.resource.data.keys().hasOnly([
-            'tournamentId', 'tournamentName', 'city', 'unit', 'subTeam', 'userId', 'email',
-            'summaryFormUrl', 'summaryFormFileName', 'remittanceUrl', 'remittanceFileName', 'uploadedAt', 'updatedAt', 'status', 'isResubmitted', 'resubmittedAt', 'resubmissionCount'
-          ])
-        ) ||
+        resource.data.get('userId', '') == request.auth.uid ||
         isAdmin() ||
-        (isScopedAdmin() && isWithinAdminScope(request.resource.data))
-      );
-      allow update: if isLoggedIn() && !isBlocked(appId) && (
-        isAdmin() || 
-        (isScopedAdmin() && isWithinAdminScope(resource.data) && isWithinAdminScope(request.resource.data)) ||
-        (
-          resource.data.userId == request.auth.uid &&
-          request.resource.data.userId == request.auth.uid &&
-          resource.data.status != 'verified' &&
-          request.resource.data.status in ['pending', 'none'] &&
-          !('registeredAmount' in request.resource.data) &&
-          !('adminNotes' in request.resource.data) &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'summaryFormUrl', 'summaryFormFileName', 'remittanceUrl', 'remittanceFileName', 'uploadedAt', 'updatedAt', 'status', 'isResubmitted', 'resubmittedAt', 'resubmissionCount'
-          ])
-        )
-      );
-      allow delete: if isLoggedIn() && !isBlocked(appId) && (
-        isAdmin() || 
         (isScopedAdmin() && isWithinAdminScope(resource.data))
       );
+
+      allow create: if isLoggedIn() &&
+        !isBlocked(appId) &&
+        (
+          (
+            isValidUnitSubmissionCreate(request.resource.data)
+          ) ||
+
+          isAdmin() ||
+
+          (
+            isScopedAdmin() &&
+            isWithinAdminScope(request.resource.data)
+          )
+        );
+
+      allow update: if isLoggedIn() &&
+        !isBlocked(appId) &&
+        (
+          isAdmin() ||
+
+          (
+            isScopedAdmin() &&
+            isWithinAdminScope(resource.data) &&
+            isWithinAdminScope(request.resource.data)
+          ) ||
+
+          (
+            resource.data.get('userId', '') == request.auth.uid &&
+            request.resource.data.get('userId', '') == request.auth.uid &&
+
+            resource.data.get('status', '') != 'verified' &&
+            request.resource.data.get('status', '') in ['pending', 'none'] &&
+
+            !('registeredAmount' in request.resource.data) &&
+            !('adminNotes' in request.resource.data) &&
+
+            request.resource.data
+              .diff(resource.data)
+              .affectedKeys()
+              .hasOnly([
+                'summaryFormUrl',
+                'summaryFormFileName',
+                'remittanceUrl',
+                'remittanceFileName',
+                'uploadedAt',
+                'updatedAt',
+                'status',
+                'isResubmitted',
+                'resubmittedAt',
+                'resubmissionCount'
+              ])
+          )
+        );
+
+      /*
+       * 一般使用者不允許自行刪除上傳紀錄，
+       * 避免在審核、對帳或爭議處理期間直接移除證據。
+       */
+      allow delete: if isLoggedIn() &&
+        !isBlocked(appId) &&
+        (
+          isAdmin() ||
+          (isScopedAdmin() && isWithinAdminScope(resource.data))
+        );
     }
   }
 }
