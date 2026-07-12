@@ -1,10 +1,39 @@
-import { currentUser, currentUserRole, selectedTournament } from "./store.js";
+import { currentUser, currentUserRole, selectedTournament, appData } from "./store.js";
 import { setPendingTargetPage } from "./auth.js";
 import { t, getLang } from "./i18n.js";
 
 // ==========================================
 // 1. 導覽列與選單控制
 // ==========================================
+
+export const updateMyRecordsErrorBadge = () => {
+    const rejectedCount = (appData.myUnitSubmissions || []).filter(s => s.status === 'rejected').length;
+    const desktopBadge = document.getElementById('nav-my-records-error-badge');
+    const mobileBadge = document.getElementById('nav-my-records-error-badge-mobile');
+
+    if (rejectedCount > 0) {
+        if (desktopBadge) {
+            desktopBadge.textContent = rejectedCount;
+            desktopBadge.classList.remove('hidden');
+            desktopBadge.classList.add('inline-flex');
+        }
+        if (mobileBadge) {
+            mobileBadge.textContent = rejectedCount;
+            mobileBadge.classList.remove('hidden');
+            mobileBadge.classList.add('inline-flex');
+        }
+    } else {
+        if (desktopBadge) {
+            desktopBadge.classList.add('hidden');
+            desktopBadge.classList.remove('inline-flex');
+        }
+        if (mobileBadge) {
+            mobileBadge.classList.add('hidden');
+            mobileBadge.classList.remove('inline-flex');
+        }
+    }
+};
+window.updateMyRecordsErrorBadge = updateMyRecordsErrorBadge;
 
 export const updateRegisterNavVisibility = () => {
     // 登入後即顯示「我的報名」
@@ -17,6 +46,8 @@ export const updateRegisterNavVisibility = () => {
     // 顯示新按鈕
     document.getElementById('nav-my-records')?.classList.toggle('hidden', !isLoggedIn);
     document.getElementById('nav-my-records-mobile')?.classList.toggle('hidden', !isLoggedIn);
+
+    updateMyRecordsErrorBadge();
 };
 // 綁定到 window 讓 HTML 也能直接呼叫
 window.updateRegisterNavVisibility = updateRegisterNavVisibility;

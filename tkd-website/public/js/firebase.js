@@ -3,6 +3,7 @@
     import { getAuth, GoogleAuthProvider } from "firebase/auth";
     import { getFirestore, collection, doc } from "firebase/firestore";
     import { getFunctions } from "firebase/functions";
+    import { getStorage } from "firebase/storage";
     import { initializeAppCheck, ReCaptchaEnterpriseProvider, getToken } from "firebase/app-check";
     import { getAnalytics } from "firebase/analytics";
 
@@ -45,6 +46,7 @@
     export const db = getFirestore(app);
     export const googleProvider = new GoogleAuthProvider();
     export const functions = getFunctions(app);
+    export const storage = getStorage(app);
     export const analytics = getAnalytics(app);
 
     // ==========================================

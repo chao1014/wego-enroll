@@ -15,12 +15,16 @@ service cloud.firestore {
     }
     
     function isSuperAdmin() {
-      // 超級管理員信箱比對
-      return isLoggedIn() && request.auth.token.email == "chao82465@gmail.com";
+      // 超級管理員信箱比對 (支援大小寫不敏感比對)
+      return isLoggedIn() && (
+        request.auth.token.email == "chao82465@gmail.com" ||
+        request.auth.token.email.lower() == "chao82465@gmail.com"
+      );
     }
     
     function isAdmin() {
-      return isSuperAdmin() || (isLoggedIn() && 'admin' in request.auth.token && request.auth.token.admin == true);
+      return isSuperAdmin() || 
+             (isLoggedIn() && 'admin' in request.auth.token && request.auth.token.admin == true);
     }
 
     function isScopedAdmin() {
@@ -61,7 +65,9 @@ service cloud.firestore {
     // 🔓 公開賽事資訊 (如賽事名稱、日期、地點等) ── 允許所有人讀取
     match /artifacts/{appId}/public/data/settings/global {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() || (
+        isLoggedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['activeAdmins'])
+      );
     }
     
     // 🔒 敏感人員名單 (包含 admins、blockedUsers 等) ── 僅限管理員讀寫
@@ -79,7 +85,7 @@ service cloud.firestore {
       allow write: if false; 
     }
 
-    // 單一設備登入防護
+    // 擺一設備登入防護
     match /artifacts/{appId}/public/data/user_sessions/{userId} {
       allow read, write: if isLoggedIn() && request.auth.uid == userId;
     }
@@ -124,6 +130,50 @@ service cloud.firestore {
       
       allow delete: if isLoggedIn() && !isBlocked(appId) && (
         resource.data.userId == request.auth.uid || 
+        isAdmin() || 
+        (isScopedAdmin() && isWithinAdminScope(resource.data))
+      );
+    }
+
+    // ==========================================
+    // 📂 3. 單位上傳報名總表與匯款紀錄安全規則
+    // ==========================================
+    match /artifacts/{appId}/public/data/unit_submissions/{subId} {
+      allow read: if isLoggedIn() && (
+        resource.data.userId == request.auth.uid || 
+        isAdmin() || 
+        (isScopedAdmin() && isWithinAdminScope(resource.data))
+      );
+      allow create: if isLoggedIn() && !isBlocked(appId) && (
+        (
+          request.resource.data.userId == request.auth.uid && 
+          request.resource.data.status == 'pending' &&
+          !('registeredAmount' in request.resource.data) &&
+          !('adminNotes' in request.resource.data) &&
+          request.resource.data.keys().hasOnly([
+            'tournamentId', 'tournamentName', 'city', 'unit', 'subTeam', 'userId', 'email',
+            'summaryFormUrl', 'summaryFormFileName', 'remittanceUrl', 'remittanceFileName', 'uploadedAt', 'updatedAt', 'status', 'isResubmitted', 'resubmittedAt', 'resubmissionCount'
+          ])
+        ) ||
+        isAdmin() ||
+        (isScopedAdmin() && isWithinAdminScope(request.resource.data))
+      );
+      allow update: if isLoggedIn() && !isBlocked(appId) && (
+        isAdmin() || 
+        (isScopedAdmin() && isWithinAdminScope(resource.data) && isWithinAdminScope(request.resource.data)) ||
+        (
+          resource.data.userId == request.auth.uid &&
+          request.resource.data.userId == request.auth.uid &&
+          resource.data.status != 'verified' &&
+          request.resource.data.status in ['pending', 'none'] &&
+          !('registeredAmount' in request.resource.data) &&
+          !('adminNotes' in request.resource.data) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'summaryFormUrl', 'summaryFormFileName', 'remittanceUrl', 'remittanceFileName', 'uploadedAt', 'updatedAt', 'status', 'isResubmitted', 'resubmittedAt', 'resubmissionCount'
+          ])
+        )
+      );
+      allow delete: if isLoggedIn() && !isBlocked(appId) && (
         isAdmin() || 
         (isScopedAdmin() && isWithinAdminScope(resource.data))
       );

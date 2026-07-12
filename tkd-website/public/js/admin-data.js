@@ -595,6 +595,242 @@ window.generateEntryList = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
+window.printFilteredRegistrations = () => {
+    const filterId = document.getElementById('admin-tour-filter')?.value;
+    if (!filterId) return alert('請先選擇一場賽事！');
+
+    const tour = appData.tournaments.find(t => t.id === filterId) || (appData.deletedTournaments && appData.deletedTournaments.find(t => t.id === filterId));
+    const allRegs = appData.registrations.filter(r => r.tournamentId === filterId);
+
+    if (allRegs.length === 0) return alert('此賽事目前無報名資料，無法產生報表！');
+
+    const keyword = (document.getElementById('admin-search-input')?.value || '').trim().toLowerCase();
+    const activeStatusFilter = document.getElementById('admin-status-filter')?.value || 'all';
+
+    const keywordFilteredRegs = keyword ? allRegs.filter(r => {
+        const u = (r.unit || '').toLowerCase();
+        const st = (r.subTeam || '').toLowerCase();
+        const fullUnit = st ? `${u}${st}` : u;
+        const em = (r.email || '').toLowerCase();
+        const pn = (r.playerName || '').toLowerCase();
+        return u.includes(keyword) || fullUnit.includes(keyword) || em.includes(keyword) || pn.includes(keyword);
+    }) : allRegs;
+
+    const groupedByUnit = {};
+    keywordFilteredRegs.forEach(r => {
+        const st = r.subTeam || '';
+        const unitKey = `${r.email || '未知帳號'}_${r.unit}_${st}`;
+        if (!groupedByUnit[unitKey]) groupedByUnit[unitKey] = [];
+        groupedByUnit[unitKey].push(r);
+    });
+
+    const matchingUnitKeys = [];
+    Object.keys(groupedByUnit).forEach(unitKey => {
+        const firstReg = groupedByUnit[unitKey][0];
+        const actualUnit = firstReg.unit;
+        const actualSubTeam = firstReg.subTeam || '';
+
+        const sub = (appData.adminUnitSubmissions || []).find(s => 
+            s.tournamentId === filterId && s.unit === actualUnit && s.subTeam === actualSubTeam
+        );
+
+        const hasSummary = !!(sub && sub.summaryFormUrl);
+        const hasRemittance = !!(sub && sub.remittanceUrl);
+        const isFullyUploaded = hasSummary && hasRemittance && sub.status && sub.status !== 'none' && sub.status !== 'not_uploaded';
+
+        let filterStatusKey = 'not_uploaded';
+        if (isFullyUploaded) {
+            if (sub.status === 'pending') {
+                filterStatusKey = sub.isResubmitted ? 'resubmitted' : 'pending';
+            } else {
+                filterStatusKey = sub.status || 'pending';
+            }
+        }
+
+        if (activeStatusFilter !== 'all') {
+            if (activeStatusFilter === 'pending_or_resubmitted') {
+                if (filterStatusKey !== 'pending' && filterStatusKey !== 'resubmitted') return;
+            } else if (activeStatusFilter !== filterStatusKey) {
+                return;
+            }
+        }
+        matchingUnitKeys.push(unitKey);
+    });
+
+    if (matchingUnitKeys.length === 0) {
+        return alert('目前篩選條件下無符合的單位或報名資料！');
+    }
+
+    const unitSortHelper = (aKey, bKey) => {
+        const isAscii = (str) => str.length > 0 && str.charCodeAt(0) < 128;
+        const aAsc = isAscii(aKey);
+        const bAsc = isAscii(bKey);
+        if (aAsc && !bAsc) return -1;
+        if (!aAsc && bAsc) return 1;
+        return aKey.localeCompare(bKey, 'zh-TW', { collation: 'stroke' });
+    };
+
+    matchingUnitKeys.sort((aKey, bKey) => {
+        const emailA = (groupedByUnit[aKey][0].email || '').toLowerCase();
+        const emailB = (groupedByUnit[bKey][0].email || '').toLowerCase();
+        if (emailA !== emailB) return emailA.localeCompare(emailB);
+        return unitSortHelper(groupedByUnit[aKey][0].unit, groupedByUnit[bKey][0].unit);
+    });
+
+    let totalFilteredPlayers = 0;
+    let totalSystemFee = 0;
+    let totalVerifiedAmount = 0;
+
+    matchingUnitKeys.forEach(k => {
+        const unitRegs = groupedByUnit[k];
+        const unitPlayerCount = unitRegs.reduce((acc, r) => {
+            return acc + (r.playerName ? r.playerName.split(' / ').length : 1);
+        }, 0);
+        totalFilteredPlayers += unitPlayerCount;
+
+        const unitFee = unitRegs.reduce((sum, r) => sum + (parseInt(r.fee) || 0), 0);
+        totalSystemFee += unitFee;
+
+        const firstReg = unitRegs[0];
+        const sub = (appData.adminUnitSubmissions || []).find(s => 
+            s.tournamentId === filterId && s.unit === firstReg.unit && s.subTeam === (firstReg.subTeam || '')
+        );
+        if (sub && sub.status === 'verified') {
+            totalVerifiedAmount += (parseInt(sub.registeredAmount) || 0);
+        }
+    });
+
+    const statusNames = {
+        all: "全部狀態",
+        pending_or_resubmitted: "待確認／已補件",
+        resubmitted: "已補件／重新上傳",
+        pending: "待確認 (初次上傳)",
+        verified: "已確認",
+        rejected: "資料錯誤",
+        not_uploaded: "未上傳"
+    };
+    const statusLabel = statusNames[activeStatusFilter] || "全部狀態";
+    const subtitleText = activeStatusFilter !== 'all' ? `（篩選：${statusLabel}）` : `（完整名單）`;
+
+    let html = `
+    <style>
+        @media print {
+            @page { margin: 1cm; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white !important; }
+            main { padding-top: 0 !important; padding-bottom: 0 !important; margin-top: 0 !important; }
+            #page-summary > div { padding: 0 !important; border: none !important; box-shadow: none !important; overflow: visible !important; }
+            .print-wrapper { overflow: visible !important; max-width: 100% !important; }
+            .no-print { display: none !important; }
+            table { page-break-inside: auto; width: 100%; border-collapse: collapse; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+            thead { display: table-header-group; }
+            tfoot { display: table-row-group; }
+        }
+    </style>
+    <div class="print-wrapper" style="font-family: 'Noto Sans TC', sans-serif; max-width: 1000px; margin: 0 auto; color: #111827; padding: 0; background: white; overflow-x: auto;">
+        <h1 style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 16px; font-size: 24px; font-weight: 900; line-height: 1.4;">
+            ${tour.name} — 單位報名收費與繳費狀況表 ${subtitleText}
+        </h1>
+        
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-around; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 16px; margin-bottom: 24px; font-size: 13px; font-weight: bold; gap: 12px;">
+            <div>單位數量：<span style="color:#2563EB; font-size:15px;">${matchingUnitKeys.length}</span> 個</div>
+            <div>報名總人數：<span style="color:#2563EB; font-size:15px;">${totalFilteredPlayers}</span> 人</div>
+            <div>應收總金額：<span style="color:#1E40AF; font-size:15px;">$${totalSystemFee.toLocaleString()}</span> 元</div>
+            <div>已收款總計：<span style="color:#16A34A; font-size:15px;">$${totalVerifiedAmount.toLocaleString()}</span> 元</div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+            <thead>
+                <tr style="background-color: #F1F5F9; border-bottom: 2px solid #334155; color: #0F172A; font-weight: 900;">
+                    <th style="padding: 12px 8px; width: 6%; text-align: center; border: 1px solid #CBD5E1;">編號</th>
+                    <th style="padding: 12px 12px; width: 22%; border: 1px solid #CBD5E1;">單位名稱</th>
+                    <th style="padding: 12px 12px; width: 28%; border: 1px solid #CBD5E1;">教練/聯絡帳號/電話</th>
+                    <th style="padding: 12px 8px; width: 10%; text-align: center; border: 1px solid #CBD5E1;">選手人數</th>
+                    <th style="padding: 12px 12px; width: 14%; text-align: right; border: 1px solid #CBD5E1;">應收費用</th>
+                    <th style="padding: 12px 12px; width: 20%; border: 1px solid #CBD5E1;">繳費審核狀態</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    matchingUnitKeys.forEach((unitKey, idx) => {
+        const unitRegs = groupedByUnit[unitKey];
+        const firstReg = unitRegs[0];
+        const actualUnit = firstReg.unit;
+        const actualSubTeam = firstReg.subTeam || '';
+        const displayUnitName = actualSubTeam ? `${actualUnit}${actualSubTeam}` : actualUnit;
+        const coaches = [firstReg.coach1, firstReg.coach2, firstReg.coach3].filter(c => c).join('、') || '無';
+        const email = firstReg.email || '未知帳號';
+        const phone = firstReg.phone || '無';
+
+        const unitPlayerCount = unitRegs.reduce((acc, r) => {
+            return acc + (r.playerName ? r.playerName.split(' / ').length : 1);
+        }, 0);
+
+        const unitSystemFee = unitRegs.reduce((sum, r) => sum + (parseInt(r.fee) || 0), 0);
+
+        const sub = (appData.adminUnitSubmissions || []).find(s => 
+            s.tournamentId === filterId && s.unit === actualUnit && s.subTeam === actualSubTeam
+        );
+
+        let statusCell = `<span style="color: #6B7280; font-weight: bold;">⚪ 未上傳匯款單</span>`;
+
+        if (sub) {
+            const submittedAmount = parseInt(sub.submittedAmount) || 0;
+
+            if (sub.status === 'verified') {
+                statusCell = `<span style="color: #15803D; font-weight: 900;">🟢 已收款</span>`;
+            } else if (sub.status === 'pending') {
+                const badgeText = sub.isResubmitted ? "💜 已補件 (待審)" : "🟡 待確認";
+                const badgeColor = sub.isResubmitted ? "#7E22CE" : "#B45309";
+                statusCell = `<span style="color: ${badgeColor}; font-weight: bold;">${badgeText} <span style="font-size:11px; color:#4B5563;">(申報:$${submittedAmount.toLocaleString()})</span></span>`;
+            } else if (sub.status === 'rejected') {
+                statusCell = `<span style="color: #B91C1C; font-weight: bold;">🔴 資料錯誤</span>`;
+            }
+        }
+
+        html += `
+            <tr style="border-bottom: 1px solid #E2E8F0; background-color: ${idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC'};">
+                <td style="padding: 10px 8px; text-align: center; border: 1px solid #E2E8F0;">${idx + 1}</td>
+                <td style="padding: 10px 12px; font-weight: 900; color: #111827; border: 1px solid #E2E8F0;">${displayUnitName}</td>
+                <td style="padding: 10px 12px; border: 1px solid #E2E8F0;">
+                    <div style="font-weight: bold; color: #1E293B;">教練: ${coaches}</div>
+                    <div style="font-size: 11px; color: #4B5563;">帳號: ${email}</div>
+                    <div style="font-size: 11px; color: #4B5563;">電話: ${phone}</div>
+                </td>
+                <td style="padding: 10px 8px; text-align: center; font-weight: bold; border: 1px solid #E2E8F0;">${unitPlayerCount} 人</td>
+                <td style="padding: 10px 12px; text-align: right; font-weight: 900; color: #1E3A8A; border: 1px solid #E2E8F0;">$${unitSystemFee.toLocaleString()}</td>
+                <td style="padding: 10px 12px; border: 1px solid #E2E8F0;">${statusCell}</td>
+            </tr>
+        `;
+    });
+
+    html += `
+            </tbody>
+            <tfoot>
+                <tr style="background-color: #F1F5F9; font-weight: 900; border-top: 2px solid #334155;">
+                    <td colspan="3" style="padding: 12px 12px; text-align: right; border: 1px solid #CBD5E1;">總計</td>
+                    <td style="padding: 12px 8px; text-align: center; border: 1px solid #CBD5E1;">${totalFilteredPlayers} 人</td>
+                    <td style="padding: 12px 12px; text-align: right; color: #1E3A8A; border: 1px solid #CBD5E1;">$${totalSystemFee.toLocaleString()}</td>
+                    <td style="padding: 12px 12px; border: 1px solid #CBD5E1; color: #15803D;">已收款共計: $${totalVerifiedAmount.toLocaleString()}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    `;
+
+    const summaryContainer = document.getElementById('summary-content');
+    if (summaryContainer) summaryContainer.innerHTML = html;
+
+    window.currentPdfFilename = `${tour.name} 單位收費狀況表 (${statusLabel}).pdf`;
+    document.title = `${tour.name} 單位收費狀況表 (${statusLabel})`;
+
+    const activePage = document.querySelector('.page-section.active');
+    if (activePage) window.lastPageBeforePrint = activePage.id.replace('page-', '');
+    if (window.navigate) window.navigate('summary');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
 // ✨ 匯出項目級別細分統計 Excel
 window.exportItemBreakdownToExcel = async () => { // ✨ 必須加上 async
     const filterId = document.getElementById('admin-tour-filter').value;

@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://wego-enroll.web.app/">
     <meta property="og:title" content="韻動國際賽事報名系統">
@@ -16,14 +17,14 @@
     <title>韻動國際 賽事報名系統</title>
     <meta name="description" content="提供專業、便捷的跆拳道賽事報名與管理服務。立即查看最新賽事規程並完成線上報名！">
     <link rel="icon" type="image/png" href="./logo.png">
-    
+
     <link href="./css/style.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 
 <body class="text-gray-800 antialiased flex flex-col min-h-[100dvh] overscroll-none">
     <div id="print-container" class="hidden"></div>
-    
+
     <div id="global-loader" class="fixed inset-0 bg-tkdDark z-50 flex flex-col items-center justify-center">
         <div class="relative flex justify-center items-center w-24 h-24 mb-6">
             <div class="absolute inset-0 border-4 border-gray-700 rounded-full"></div>
@@ -34,7 +35,8 @@
         <p class="text-xs text-gray-400 mt-2 font-bold tracking-widest">請稍候片刻...</p>
     </div>
 
-    <nav id="navbar" class="bg-tkdDark text-white shadow-lg fixed w-full top-0 z-40 transition-transform duration-300 border-b border-white/10">
+    <nav id="navbar"
+        class="bg-tkdDark text-white shadow-lg fixed w-full top-0 z-40 transition-transform duration-300 border-b border-white/10">
         <div class="w-full px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 <div class="flex items-center gap-3 shrink-0 cursor-pointer" onclick="clearHomeFilterAndNavigate()">
@@ -46,83 +48,109 @@
                 </div>
 
                 <div class="hidden lg:flex items-center space-x-1">
-                    <span id="user-greeting" class="text-xs text-gray-400 mr-4 border-r border-gray-700 pr-4 font-bold tracking-wide">載入中...</span>
-                    <button onclick="clearHomeFilterAndNavigate()" class="px-4 py-2 rounded-xl text-sm font-bold hover:bg-gray-700/50 transition-colors">
+                    <span id="user-greeting"
+                        class="text-xs text-gray-400 mr-4 border-r border-gray-700 pr-4 font-bold tracking-wide">載入中...</span>
+                    <button onclick="clearHomeFilterAndNavigate()"
+                        class="px-4 py-2 rounded-xl text-sm font-bold hover:bg-gray-700/50 transition-colors">
                         <i class="fas fa-th-list mr-1"></i> <span data-i18n="nav.list">賽事列表</span>
                     </button>
-                    <button id="nav-info" onclick="navigate('info')" class="hidden px-4 py-2 rounded-xl text-sm font-bold hover:bg-gray-700/50 transition-colors">
+                    <button id="nav-info" onclick="navigate('info')"
+                        class="hidden px-4 py-2 rounded-xl text-sm font-bold hover:bg-gray-700/50 transition-colors">
                         <i class="fas fa-info-circle mr-1"></i> <span data-i18n="nav.info">競賽規程</span>
                     </button>
-                    
-                    <button id="nav-my-records" onclick="navigate('my-records')" class="hidden px-4 py-2 rounded-xl text-sm font-bold text-blue-400 hover:bg-blue-900/30 transition-colors">
+
+                    <button id="nav-my-records" onclick="navigate('my-records')"
+                        class="hidden relative inline-flex items-center px-4 py-2 rounded-xl text-sm font-bold text-blue-400 hover:bg-blue-900/30 transition-colors">
                         <i class="fas fa-list-alt mr-1"></i> <span data-i18n="nav.my-records">我的報名</span>
+                        <span id="nav-my-records-error-badge"
+                            class="hidden ml-1.5 bg-tkdRed text-white font-black text-[11px] min-w-[20px] h-[20px] px-1.5 rounded-full items-center justify-center shadow-md border border-white/20">0</span>
                     </button>
-                
-                    <button id="nav-admin" onclick="navigate('admin')" class="hidden px-4 py-2 rounded-xl text-sm font-bold bg-tkdRed/90 hover:bg-tkdRed transition-colors shadow-sm ml-2">
+
+                    <button id="nav-admin" onclick="navigate('admin')"
+                        class="hidden px-4 py-2 rounded-xl text-sm font-bold bg-tkdRed/90 hover:bg-tkdRed transition-colors shadow-sm ml-2">
                         <i class="fas fa-shield-alt mr-1"></i> <span data-i18n="nav.admin">管理後台</span>
                     </button>
-                    <button id="nav-login" onclick="navigate('login')" class="hidden px-4 py-2 rounded-xl text-sm font-bold bg-tkdBlue/90 hover:bg-tkdBlue transition-colors shadow-sm ml-2">
+                    <button id="nav-login" onclick="navigate('login')"
+                        class="hidden px-4 py-2 rounded-xl text-sm font-bold bg-tkdBlue/90 hover:bg-tkdBlue transition-colors shadow-sm ml-2">
                         <i class="fas fa-sign-in-alt mr-1"></i> <span data-i18n="nav.login">系統登入</span>
                     </button>
-                    <button id="nav-logout" onclick="logout()" class="hidden px-4 py-2 rounded-xl text-sm font-bold text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors ml-1">
+                    <button id="nav-logout" onclick="logout()"
+                        class="hidden px-4 py-2 rounded-xl text-sm font-bold text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors ml-1">
                         <i class="fas fa-sign-out-alt"></i> <span data-i18n="nav.logout">登出帳號</span>
                     </button>
-                
+
                     <div class="flex items-center ml-2 border-l border-gray-700 pl-4 gap-3">
-                        <button onclick="window.switchLanguage('zh-TW')" id="lang-zh" class="text-xs font-black transition-colors hover:text-white">中</button>
+                        <button onclick="window.switchLanguage('zh-TW')" id="lang-zh"
+                            class="text-xs font-black transition-colors hover:text-white">中</button>
                         <span class="text-gray-600 text-xs">/</span>
-                        <button onclick="window.switchLanguage('en')" id="lang-en" class="text-xs font-black transition-colors hover:text-white">EN</button>
+                        <button onclick="window.switchLanguage('en')" id="lang-en"
+                            class="text-xs font-black transition-colors hover:text-white">EN</button>
                     </div>
                 </div>
 
                 <div class="lg:hidden flex items-center">
-                    <button onclick="toggleMobileMenu()" class="inline-flex items-center justify-center p-2 rounded-xl text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none transition-colors">
+                    <button onclick="toggleMobileMenu()"
+                        class="inline-flex items-center justify-center p-2 rounded-xl text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none transition-colors">
                         <i class="fas fa-bars text-xl" id="menu-icon"></i>
                     </button>
                 </div>
             </div>
         </div>
 
-        <div id="mobile-menu" class="lg:hidden bg-gray-800 shadow-inner">            
+        <div id="mobile-menu" class="lg:hidden bg-gray-800 shadow-inner">
             <div class="px-3 pb-4 pt-2 space-y-2">
                 <div class="flex justify-end px-3 py-2 gap-4 border-b border-gray-700 mb-2">
                     <button onclick="window.switchLanguage('zh-TW')" class="text-xs font-black text-white">繁體中文</button>
-                    <button onclick="window.switchLanguage('en')" class="text-xs font-black text-gray-400">English</button>
+                    <button onclick="window.switchLanguage('en')"
+                        class="text-xs font-black text-gray-400">English</button>
                 </div>
-        
-                <div class="text-xs text-gray-400 px-3 py-2 border-b border-gray-700 mb-2 font-bold" id="user-greeting-mobile"></div>
-                
-                <button onclick="clearHomeFilterAndNavigate()" class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold hover:bg-gray-700 flex items-center transition-colors">
+
+                <div class="text-xs text-gray-400 px-3 py-2 border-b border-gray-700 mb-2 font-bold"
+                    id="user-greeting-mobile"></div>
+
+                <button onclick="clearHomeFilterAndNavigate()"
+                    class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold hover:bg-gray-700 flex items-center transition-colors">
                     <i class="fas fa-th-list w-6 text-center mr-2"></i> <span data-i18n="nav.list">賽事列表</span>
                 </button>
-                
-                <button id="nav-info-mobile" onclick="navigate('info')" class="hidden w-full text-left rounded-xl text-sm font-bold hover:bg-gray-700 transition-colors">
+
+                <button id="nav-info-mobile" onclick="navigate('info')"
+                    class="hidden w-full text-left rounded-xl text-sm font-bold hover:bg-gray-700 transition-colors">
                     <div class="flex items-center px-4 py-3">
                         <i class="fas fa-info-circle w-6 text-center mr-2"></i> <span data-i18n="nav.info">賽事規程</span>
                     </div>
                 </button>
-                
-                <button id="nav-my-records-mobile" onclick="navigate('my-records')" class="hidden w-full text-left rounded-xl text-sm font-bold hover:bg-gray-700 transition-colors">
-                    <div class="flex items-center px-4 py-3">
-                        <i class="fas fa-list-alt w-6 text-center mr-2"></i> <span data-i18n="nav.my-records">我的報名</span>
+
+                <button id="nav-my-records-mobile" onclick="navigate('my-records')"
+                    class="hidden w-full text-left rounded-xl text-sm font-bold hover:bg-gray-700 transition-colors">
+                    <div class="flex items-center justify-between px-4 py-3">
+                        <div class="flex items-center">
+                            <i class="fas fa-list-alt w-6 text-center mr-2"></i> <span
+                                data-i18n="nav.my-records">我的報名</span>
+                        </div>
+                        <span id="nav-my-records-error-badge-mobile"
+                            class="hidden bg-tkdRed text-white font-black text-[11px] min-w-[20px] h-[20px] px-1.5 rounded-full items-center justify-center shadow-md">0</span>
                     </div>
                 </button>
-                
-                <button id="nav-admin-mobile" onclick="navigate('admin')" class="hidden w-full text-left rounded-xl text-sm font-bold bg-tkdRed hover:bg-red-700 transition-colors mt-2">
+
+                <button id="nav-admin-mobile" onclick="navigate('admin')"
+                    class="hidden w-full text-left rounded-xl text-sm font-bold bg-tkdRed hover:bg-red-700 transition-colors mt-2">
                     <div class="flex items-center px-4 py-3">
                         <i class="fas fa-shield-alt w-6 text-center mr-2"></i> <span data-i18n="nav.admin">管理後台</span>
                     </div>
                 </button>
-                
-                <button id="nav-login-mobile" onclick="navigate('login')" class="hidden w-full text-left rounded-xl text-sm font-bold bg-tkdBlue hover:bg-blue-700 transition-colors mt-2">
+
+                <button id="nav-login-mobile" onclick="navigate('login')"
+                    class="hidden w-full text-left rounded-xl text-sm font-bold bg-tkdBlue hover:bg-blue-700 transition-colors mt-2">
                     <div class="flex items-center px-4 py-3">
                         <i class="fas fa-sign-in-alt w-6 text-center mr-2"></i> <span data-i18n="nav.login">系統登入</span>
                     </div>
                 </button>
-                
-                <button id="nav-logout-mobile" onclick="logout()" class="hidden w-full text-left rounded-xl text-sm font-bold text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">
+
+                <button id="nav-logout-mobile" onclick="logout()"
+                    class="hidden w-full text-left rounded-xl text-sm font-bold text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">
                     <div class="flex items-center px-4 py-3">
-                        <i class="fas fa-sign-out-alt w-6 text-center mr-2"></i> <span data-i18n="nav.logout">登出帳號</span>
+                        <i class="fas fa-sign-out-alt w-6 text-center mr-2"></i> <span
+                            data-i18n="nav.logout">登出帳號</span>
                     </div>
                 </button>
             </div>
@@ -132,83 +160,115 @@
     <main class="pt-16 pb-0 w-full flex-grow flex flex-col items-center" id="main-container">
 
         <section id="page-login" class="page-section hidden w-full relative flex-grow bg-tkdDark">
-            
+
             <div class="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-slate-900">
-                <div class="absolute -top-20 -left-20 w-[600px] h-[600px] bg-blue-600/50 rounded-full mix-blend-screen filter blur-[120px]"></div>
-                <div class="absolute top-20 -right-10 w-[500px] h-[500px] bg-red-500/50 rounded-full mix-blend-screen filter blur-[100px]"></div>
+                <div
+                    class="absolute -top-20 -left-20 w-[600px] h-[600px] bg-blue-600/50 rounded-full mix-blend-screen filter blur-[120px]">
+                </div>
+                <div
+                    class="absolute top-20 -right-10 w-[500px] h-[500px] bg-red-500/50 rounded-full mix-blend-screen filter blur-[100px]">
+                </div>
                 <div class="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/70 to-tkdDark"></div>
             </div>
 
             <div class="absolute inset-0 z-10 flex flex-col justify-center items-center px-4 overflow-y-auto">
-                <div class="w-full max-w-md bg-white rounded-[2rem] shadow-2xl overflow-hidden border border-gray-100 relative">
+                <div
+                    class="w-full max-w-md bg-white rounded-[2rem] shadow-2xl overflow-hidden border border-gray-100 relative">
                     <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-tkdRed to-tkdBlue"></div>
                     <div class="p-10 text-center">
-                        <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                        <div
+                            class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
                             <i class="fas fa-user-circle text-5xl text-gray-300"></i>
                         </div>
                         <h2 class="text-2xl font-black text-gray-800 mb-2" data-i18n="login.title">登入系統</h2>
-                        <p class="text-xs text-gray-500 font-bold mb-6 leading-relaxed" data-i18n="login.subtitle">請使用您的 Google 帳號登入<br>以進行報名作業或管理賽事。</p>
+                        <p class="text-xs text-gray-500 font-bold mb-6 leading-relaxed" data-i18n="login.subtitle">請使用您的
+                            Google 帳號登入<br>以進行報名作業或管理賽事。</p>
 
-                        <div id="webview-warning" class="hidden text-left bg-red-50 text-red-700 p-4 rounded-xl mb-6 text-[13px] font-bold border border-red-200 shadow-sm" data-i18n="login.webview-warning">
+                        <div id="webview-warning"
+                            class="hidden text-left bg-red-50 text-red-700 p-4 rounded-xl mb-6 text-[13px] font-bold border border-red-200 shadow-sm"
+                            data-i18n="login.webview-warning">
                             <i class="fas fa-exclamation-triangle mr-1 text-red-500 text-lg mb-2 block text-center"></i>
                             Google 安全政策不允許在 LINE 或 FB 內直接登入。<br><br>
-                            👉 請點擊畫面右上角（或右下角）的 <span class="bg-red-100 px-2 py-0.5 rounded text-red-900 border border-red-200">⋮</span> 或 <span class="bg-red-100 px-2 py-0.5 rounded text-red-900 border border-red-200">⋯</span><br>
+                            👉 請點擊畫面右上角（或右下角）的 <span
+                                class="bg-red-100 px-2 py-0.5 rounded text-red-900 border border-red-200">⋮</span> 或
+                            <span class="bg-red-100 px-2 py-0.5 rounded text-red-900 border border-red-200">⋯</span><br>
                             👉 選擇 <span class="text-tkdBlue font-black">「以預設瀏覽器開啟」</span><br>
                             (Safari 或 Chrome) 即可正常登入！
                         </div>
 
-                        <button type="button" id="btn-google-login" class="w-full bg-white border-2 border-gray-100 text-gray-700 py-4 rounded-2xl font-black shadow-sm hover:border-gray-300 hover:bg-gray-50 transition-all active:scale-[0.98] flex justify-center items-center">
-                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="w-6 h-6 mr-3 google-icon">
+                        <button type="button" id="btn-google-login"
+                            class="w-full bg-white border-2 border-gray-100 text-gray-700 py-4 rounded-2xl font-black shadow-sm hover:border-gray-300 hover:bg-gray-50 transition-all active:scale-[0.98] flex justify-center items-center">
+                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google"
+                                class="w-6 h-6 mr-3 google-icon">
                             <span id="btn-google-text" data-i18n="login.btn-google">使用 Google 帳號登入</span>
                         </button>
 
-                        <button onclick="clearHomeFilterAndNavigate()" class="mt-6 text-xs text-gray-400 font-bold hover:text-gray-600 transition-colors underline decoration-gray-300 underline-offset-4" data-i18n="login.btn-browse">
+                        <button onclick="clearHomeFilterAndNavigate()"
+                            class="mt-6 text-xs text-gray-400 font-bold hover:text-gray-600 transition-colors underline decoration-gray-300 underline-offset-4"
+                            data-i18n="login.btn-browse">
                             先去逛逛賽事列表
                         </button>
 
-                        <p id="login-error" class="text-red-600 text-xs font-bold mt-6 hidden bg-red-50 p-4 rounded-xl border border-red-100"></p>
+                        <p id="login-error"
+                            class="text-red-600 text-xs font-bold mt-6 hidden bg-red-50 p-4 rounded-xl border border-red-100">
+                        </p>
                     </div>
                 </div>
             </div>
         </section>
 
         <section id="page-home" class="page-section active w-full relative flex-grow flex flex-col bg-tkdDark">
-            
-            <div class="absolute top-0 left-0 w-full h-[500px] sm:h-[700px] z-0 pointer-events-none overflow-hidden bg-slate-900">
-                <div class="absolute -top-20 -left-20 w-[600px] h-[600px] bg-blue-600/50 rounded-full mix-blend-screen filter blur-[120px]"></div>
-                
-                <div class="absolute top-20 -right-10 w-[500px] h-[500px] bg-red-500/50 rounded-full mix-blend-screen filter blur-[100px]"></div>
-                
+
+            <div
+                class="absolute top-0 left-0 w-full h-[500px] sm:h-[700px] z-0 pointer-events-none overflow-hidden bg-slate-900">
+                <div
+                    class="absolute -top-20 -left-20 w-[600px] h-[600px] bg-blue-600/50 rounded-full mix-blend-screen filter blur-[120px]">
+                </div>
+
+                <div
+                    class="absolute top-20 -right-10 w-[500px] h-[500px] bg-red-500/50 rounded-full mix-blend-screen filter blur-[100px]">
+                </div>
+
                 <div class="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/70 to-tkdDark"></div>
             </div>
 
             <div class="relative z-10 w-full px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-14 flex flex-col gap-2 sm:gap-4">
-                
+
                 <div class="w-full">
-                    
+
                     <div class="flex lg:hidden items-center justify-between w-full mb-3 px-1">
-                        <div class="text-white text-sm font-black tracking-widest whitespace-nowrap"><i class="fas fa-filter mr-1.5 text-tkdRed"></i>賽事快速篩選</div>
-                        <button onclick="window.copyShareLink(this)" class="shrink-0 text-white text-[11px] font-black transition-all flex items-center bg-blue-600/40 hover:bg-blue-600/60 px-3 py-1.5 rounded-lg border border-blue-400/30 active:scale-95 shadow-lg backdrop-blur-sm">
+                        <div class="text-white text-sm font-black tracking-widest whitespace-nowrap"><i
+                                class="fas fa-filter mr-1.5 text-tkdRed"></i>賽事快速篩選</div>
+                        <button onclick="window.copyShareLink(this)"
+                            class="shrink-0 text-white text-[11px] font-black transition-all flex items-center bg-blue-600/40 hover:bg-blue-600/60 px-3 py-1.5 rounded-lg border border-blue-400/30 active:scale-95 shadow-lg backdrop-blur-sm">
                             <i class="fas fa-link mr-1.5"></i> 複製篩選結果
                         </button>
                     </div>
-                    
-                    <div class="flex flex-col lg:flex-row gap-3 w-full bg-black/40 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-white/10 shadow-2xl items-center">
+
+                    <div
+                        class="flex flex-col lg:flex-row gap-3 w-full bg-black/40 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-white/10 shadow-2xl items-center">
                         <div class="relative w-full lg:flex-[2]">
-                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="fas fa-search text-white/50 text-sm"></i></div>
-                            <input type="text" id="home-search" oninput="window.renderHomePage()" placeholder="輸入賽事關鍵字..." class="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/40 outline-none focus:bg-white/20 transition-all text-sm font-bold">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i
+                                    class="fas fa-search text-white/50 text-sm"></i></div>
+                            <input type="text" id="home-search" oninput="window.renderHomePage()"
+                                placeholder="輸入賽事關鍵字..."
+                                class="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder-white/40 outline-none focus:bg-white/20 transition-all text-sm font-bold">
                         </div>
 
                         <div class="w-full lg:flex-[1.5] relative">
-                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="fas fa-map-marker-alt text-white/50 text-sm"></i></div>
-                            <select id="home-city-filter" onchange="window.renderHomePage()" class="w-full pl-10 pr-10 py-3 rounded-xl bg-white/10 border border-white/10 text-white outline-none focus:bg-white/20 transition-all text-sm font-bold cursor-pointer appearance-none [&>option]:text-gray-800">   
-                                <option value="">全部縣市</option>                               
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i
+                                    class="fas fa-map-marker-alt text-white/50 text-sm"></i></div>
+                            <select id="home-city-filter" onchange="window.renderHomePage()"
+                                class="w-full pl-10 pr-10 py-3 rounded-xl bg-white/10 border border-white/10 text-white outline-none focus:bg-white/20 transition-all text-sm font-bold cursor-pointer appearance-none [&>option]:text-gray-800">
+                                <option value="">全部縣市</option>
                             </select>
                         </div>
 
                         <div class="w-full lg:flex-[1.5] relative">
-                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i class="fas fa-clock text-white/50 text-sm"></i></div>
-                            <select id="home-status-filter" onchange="window.renderHomePage()" class="w-full pl-10 pr-10 py-3 rounded-xl bg-white/10 border border-white/10 text-white outline-none focus:bg-white/20 transition-all text-sm font-bold cursor-pointer appearance-none [&>option]:text-gray-800">   
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><i
+                                    class="fas fa-clock text-white/50 text-sm"></i></div>
+                            <select id="home-status-filter" onchange="window.renderHomePage()"
+                                class="w-full pl-10 pr-10 py-3 rounded-xl bg-white/10 border border-white/10 text-white outline-none focus:bg-white/20 transition-all text-sm font-bold cursor-pointer appearance-none [&>option]:text-gray-800">
                                 <option value="">全部狀態</option>
                                 <option value="open">🔥 熱烈報名中</option>
                                 <option value="upcoming">⏳ 即將開放</option>
@@ -216,71 +276,98 @@
                             </select>
                         </div>
 
-                        <button onclick="window.copyShareLink(this)" class="hidden lg:flex shrink-0 justify-center text-white text-sm font-black transition-all items-center bg-blue-600/40 hover:bg-blue-600/60 px-5 py-3 rounded-xl border border-blue-400/30 active:scale-95 shadow-lg backdrop-blur-sm">
+                        <button onclick="window.copyShareLink(this)"
+                            class="hidden lg:flex shrink-0 justify-center text-white text-sm font-black transition-all items-center bg-blue-600/40 hover:bg-blue-600/60 px-5 py-3 rounded-xl border border-blue-400/30 active:scale-95 shadow-lg backdrop-blur-sm">
                             <i class="fas fa-link mr-1.5"></i> 複製篩選結果
                         </button>
                     </div>
                 </div>
 
-                <div class="text-left max-w-3xl mt-2 mb-2">     
-                    <h1 class="text-3xl sm:text-4xl font-black text-white mb-2 drop-shadow-lg tracking-wide" data-i18n="home.title">韻動國際報名系統</h1>
-                    <p class="text-gray-300 font-bold text-sm sm:text-base drop-shadow-md leading-relaxed" data-i18n="home.subtitle">挑戰自我，成就卓越。請於下方選擇您欲參加的賽事，查看詳細規程並完成報名手續。</p>
+                <div class="text-left max-w-3xl mt-2 mb-2">
+                    <h1 class="text-3xl sm:text-4xl font-black text-white mb-2 drop-shadow-lg tracking-wide"
+                        data-i18n="home.title">韻動國際報名系統</h1>
+                    <p class="text-gray-300 font-bold text-sm sm:text-base drop-shadow-md leading-relaxed"
+                        data-i18n="home.subtitle">挑戰自我，成就卓越。請於下方選擇您欲參加的賽事，查看詳細規程並完成報名手續。</p>
                 </div>
 
-                <div id="home-tournaments-grid" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 w-full"></div>
+                <div id="home-tournaments-grid"
+                    class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 w-full"></div>
 
                 <div id="home-empty-msg" class="hidden text-center py-20 text-gray-500 w-full px-4">
-                    <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10"><i class="fas fa-calendar-times text-2xl"></i></div>
+                    <div
+                        class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10">
+                        <i class="fas fa-calendar-times text-2xl"></i></div>
                     <p class="text-lg font-black text-white/50">目前暫無符合條件的賽事</p>
                 </div>
             </div>
         </section>
 
         <section id="page-info" class="page-section w-full px-4 sm:px-8 lg:px-12 my-2 sm:my-4">
-            <div id="info-not-selected" class="bg-white rounded-3xl p-10 sm:p-16 text-center shadow-sm border border-gray-200">
+            <div id="info-not-selected"
+                class="bg-white rounded-3xl p-10 sm:p-16 text-center shadow-sm border border-gray-200">
                 <i class="fas fa-mouse-pointer text-4xl text-gray-300 mb-4"></i>
                 <h3 class="text-xl font-black text-gray-800">尚未選定賽事</h3>
-                <button onclick="clearHomeFilterAndNavigate()" class="bg-tkdBlue text-white px-8 py-3 rounded-2xl font-black mt-6 shadow-md hover:bg-blue-700 transition-colors">前往列表選擇</button>
+                <button onclick="clearHomeFilterAndNavigate()"
+                    class="bg-tkdBlue text-white px-8 py-3 rounded-2xl font-black mt-6 shadow-md hover:bg-blue-700 transition-colors">前往列表選擇</button>
             </div>
 
             <div id="info-content" class="hidden grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-                
+
                 <div class="lg:col-span-8 flex flex-col gap-3 h-auto lg:h-[calc(100vh-6rem)]">
-                    
-                    <div class="shrink-0 bg-white/95 backdrop-blur-md border border-gray-200 p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-center rounded-2xl shadow-sm gap-3">
-                        
-                        <label class="flex items-center cursor-pointer group w-full sm:w-auto justify-center sm:justify-start pl-2">
+
+                    <div
+                        class="shrink-0 bg-white/95 backdrop-blur-md border border-gray-200 p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-center rounded-2xl shadow-sm gap-3">
+
+                        <label
+                            class="flex items-center cursor-pointer group w-full sm:w-auto justify-center sm:justify-start pl-2">
                             <div class="relative flex items-center">
-                                <input type="checkbox" id="privacy-consent" class="peer sr-only" onchange="window.toggleRegisterBtn()">
-                                <div class="w-6 h-6 bg-gray-100 border-2 border-gray-200 rounded-lg peer-checked:bg-tkdBlue peer-checked:border-tkdBlue transition-all duration-300 flex items-center justify-center shadow-inner group-hover:border-blue-300">
-                                    <i class="fas fa-check text-white opacity-0 peer-checked:opacity-100 text-xs transform scale-50 peer-checked:scale-100 transition-all duration-300"></i>
+                                <input type="checkbox" id="privacy-consent" class="peer sr-only"
+                                    onchange="window.toggleRegisterBtn()">
+                                <div
+                                    class="w-6 h-6 bg-gray-100 border-2 border-gray-200 rounded-lg peer-checked:bg-tkdBlue peer-checked:border-tkdBlue transition-all duration-300 flex items-center justify-center shadow-inner group-hover:border-blue-300">
+                                    <i
+                                        class="fas fa-check text-white opacity-0 peer-checked:opacity-100 text-xs transform scale-50 peer-checked:scale-100 transition-all duration-300"></i>
                                 </div>
                             </div>
-                            <span class="ml-2 text-[13px] sm:text-sm font-black text-gray-500 group-hover:text-tkdBlue transition-colors select-none">
-                                <span data-i18n="info.consent-prefix">我已詳細閱讀並同意</span> 
-                                <button type="button" onclick="event.preventDefault(); window.togglePrivacyModal()" class="text-tkdBlue underline decoration-2 underline-offset-4 hover:text-blue-800 transition-colors" data-i18n="info.consent-link">隱私權保護政策</button>
+                            <span
+                                class="ml-2 text-[13px] sm:text-sm font-black text-gray-500 group-hover:text-tkdBlue transition-colors select-none">
+                                <span data-i18n="info.consent-prefix">我已詳細閱讀並同意</span>
+                                <button type="button" onclick="event.preventDefault(); window.togglePrivacyModal()"
+                                    class="text-tkdBlue underline decoration-2 underline-offset-4 hover:text-blue-800 transition-colors"
+                                    data-i18n="info.consent-link">隱私權保護政策</button>
                             </span>
                         </label>
 
-                        <button id="btn-go-register" onclick="window.checkConsentAndNavigate()" class="w-full sm:w-auto bg-gray-100 text-gray-400 cursor-not-allowed px-6 py-3 rounded-xl font-black transition-all duration-300 flex items-center justify-center group text-sm">
-                            <span data-i18n="info.btn-register">前往填寫報名表</span> <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                        <button id="btn-go-register" onclick="window.checkConsentAndNavigate()"
+                            class="w-full sm:w-auto bg-gray-100 text-gray-400 cursor-not-allowed px-6 py-3 rounded-xl font-black transition-all duration-300 flex items-center justify-center group text-sm">
+                            <span data-i18n="info.btn-register">前往填寫報名表</span> <i
+                                class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
                         </button>
                     </div>
 
-                    <div class="flex-grow bg-white rounded-3xl shadow-md border border-gray-100 relative flex flex-col overflow-hidden">                   
-                        <div class="absolute top-0 left-0 w-1.5 h-full bg-tkdRed z-10 pointer-events-none rounded-l-3xl"></div>                        
+                    <div
+                        class="flex-grow bg-white rounded-3xl shadow-md border border-gray-100 relative flex flex-col overflow-hidden">
+                        <div
+                            class="absolute top-0 left-0 w-1.5 h-full bg-tkdRed z-10 pointer-events-none rounded-l-3xl">
+                        </div>
                         <div class="overflow-visible lg:overflow-y-auto p-5 sm:p-6 relative h-auto lg:h-full">
-                            <h1 id="info-title" class="text-xl sm:text-2xl font-black text-gray-900 mb-4 leading-snug pl-2 cursor-pointer hover:opacity-80 transition-opacity active:scale-[0.99]" title="點擊複製賽事連結"></h1>
-                            <div id="info-rules" class="rule-content whitespace-pre-wrap text-gray-600 font-medium bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100 min-h-full text-sm"></div>
-                        </div>                        
+                            <h1 id="info-title"
+                                class="text-xl sm:text-2xl font-black text-gray-900 mb-4 leading-snug pl-2 cursor-pointer hover:opacity-80 transition-opacity active:scale-[0.99]"
+                                title="點擊複製賽事連結"></h1>
+                            <div id="info-rules"
+                                class="rule-content whitespace-pre-wrap text-gray-600 font-medium bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100 min-h-full text-sm">
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="lg:col-span-4 flex flex-col h-auto lg:h-[calc(100vh-6rem)] mb-10 lg:mb-0">
-                    <div class="bg-white rounded-3xl shadow-md border border-gray-100 flex flex-col h-full overflow-hidden">
+                    <div
+                        class="bg-white rounded-3xl shadow-md border border-gray-100 flex flex-col h-full overflow-hidden">
                         <div class="p-4 sm:p-5 border-b border-gray-100 shrink-0 bg-white z-10">
                             <h3 class="font-black text-base text-gray-800 flex items-center m-0">
-                                <i class="fas fa-download text-tkdBlue mr-2"></i> <span data-i18n="info.attachments">附件下載</span>
+                                <i class="fas fa-download text-tkdBlue mr-2"></i> <span
+                                    data-i18n="info.attachments">附件下載</span>
                             </h3>
                         </div>
                         <div class="p-4 sm:p-5 lg:overflow-y-auto flex-grow bg-gray-50/30">
@@ -288,44 +375,52 @@
                         </div>
                     </div>
                 </div>
-                
+
             </div>
         </section>
 
         <section id="page-my-records" class="page-section w-full px-4 sm:px-8 lg:px-12 pt-2 pb-2 sm:pt-4 sm:pb-4">
-            
+
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <h2 class="text-xl sm:text-2xl font-black text-gray-800 m-0 flex items-center">
                     <i class="fas fa-list-alt mr-3 text-blue-400"></i><span data-i18n="nav.my-records">我的報名管理中心</span>
                 </h2>
-                
-                <button onclick="window.toggleTeamProfiles()" class="w-full sm:w-auto bg-tkdBlue text-white border border-blue-700 px-6 py-3 rounded-xl text-sm font-black hover:bg-blue-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center active:scale-95 group">
-                    <i class="fas fa-address-book mr-2 text-blue-200 group-hover:text-white transition-colors"></i>常用隊職員名單 
-                    <i id="teamProfilesIcon" class="fas fa-chevron-up ml-3 text-[10px] text-blue-200 group-hover:text-white transition-all duration-300 rotate-180"></i>
+
+                <button onclick="window.toggleTeamProfiles()"
+                    class="w-full sm:w-auto bg-tkdBlue text-white border border-blue-700 px-6 py-3 rounded-xl text-sm font-black hover:bg-blue-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center active:scale-95 group">
+                    <i
+                        class="fas fa-address-book mr-2 text-blue-200 group-hover:text-white transition-colors"></i>常用隊職員名單
+                    <i id="teamProfilesIcon"
+                        class="fas fa-chevron-up ml-3 text-[10px] text-blue-200 group-hover:text-white transition-all duration-300 rotate-180"></i>
                 </button>
             </div>
 
-            <div id="teamProfilesBody" class="hidden bg-white rounded-3xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-8 transition-all duration-300">
+            <div id="teamProfilesBody"
+                class="hidden bg-white rounded-3xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-8 transition-all duration-300">
                 <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-4">
                     <h3 class="text-sm font-black text-gray-700 tracking-wide flex items-center">
                         <i class="fas fa-users-cog mr-2 text-tkdBlue"></i> 名單管理
                     </h3>
-                    <button onclick="window.openTeamProfileModal()" class="bg-tkdBlue text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm flex items-center">
+                    <button onclick="window.openTeamProfileModal()"
+                        class="bg-tkdBlue text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm flex items-center">
                         <i class="fas fa-plus mr-1.5"></i> 新增名單
                     </button>
                 </div>
-                
-                <div id="teamProfilesContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
+
+                <div id="teamProfilesContainer"
+                    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
                 <div id="teamProfilesEmpty" class="hidden text-center py-10 text-gray-400 font-bold text-sm">
                     <i class="fas fa-folder-open text-3xl mb-3 text-gray-300 block"></i>您目前還沒有建立常用名單
                 </div>
             </div>
-        
+
             <div id="myRecordsTournamentsList" class="space-y-6">
                 <div class="text-center py-20 flex flex-col items-center justify-center">
                     <div class="relative w-16 h-16 mb-4">
                         <div class="absolute inset-0 border-4 border-gray-700 rounded-full"></div>
-                        <div class="absolute inset-0 border-4 border-tkdBlue rounded-full border-t-transparent animate-spin"></div>
+                        <div
+                            class="absolute inset-0 border-4 border-tkdBlue rounded-full border-t-transparent animate-spin">
+                        </div>
                     </div>
                     <p class="text-xs text-gray-400 font-bold tracking-widest uppercase">正在讀取報名紀錄...</p>
                 </div>
@@ -333,62 +428,83 @@
         </section>
 
         <section id="page-register" class="page-section w-full px-4 sm:px-8 lg:px-12 pt-2 pb-2 sm:pt-4 sm:pb-4">
-            <div id="reg-not-selected" class="bg-white rounded-3xl p-16 text-center shadow-sm border border-gray-200 mb-6">
+            <div id="reg-not-selected"
+                class="bg-white rounded-3xl p-16 text-center shadow-sm border border-gray-200 mb-6">
                 <i class="fas fa-exclamation-circle text-5xl text-gray-300 mb-6"></i>
                 <h3 class="text-xl font-black text-gray-800">請先選擇賽事，才能進行報名</h3>
-                <button onclick="clearHomeFilterAndNavigate()" class="bg-tkdBlue text-white px-10 py-3 rounded-xl font-bold mt-8 hover:bg-blue-700 transition-colors">前往選擇</button>
+                <button onclick="clearHomeFilterAndNavigate()"
+                    class="bg-tkdBlue text-white px-10 py-3 rounded-xl font-bold mt-8 hover:bg-blue-700 transition-colors">前往選擇</button>
             </div>
 
             <div id="reg-form-container" class="hidden grid-cols-1 gap-2 sm:gap-4">
                 <div class="bg-white rounded-[2rem] shadow-xl border border-gray-100 overflow-hidden relative">
-                    <div id="form-loading" class="hidden absolute inset-0 bg-white/90 flex-col items-center justify-center z-20 backdrop-blur-sm">
-                        <div class="w-16 h-16 border-4 border-gray-200 border-t-tkdRed rounded-full animate-spin mb-4"></div>
+                    <div id="form-loading"
+                        class="hidden absolute inset-0 bg-white/90 flex-col items-center justify-center z-20 backdrop-blur-sm">
+                        <div class="w-16 h-16 border-4 border-gray-200 border-t-tkdRed rounded-full animate-spin mb-4">
+                        </div>
                         <span class="text-gray-800 font-black tracking-widest text-sm">資料處理中...</span>
                     </div>
 
-                    <div class="bg-tkdDark text-white px-8 py-5 sm:py-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 rounded-t-[2rem]">                        
+                    <div
+                        class="bg-tkdDark text-white px-8 py-5 sm:py-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 rounded-t-[2rem]">
                         <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
                             <h2 class="hidden sm:flex text-xl font-black tracking-wide m-0 items-center shrink-0">
-                                <i class="fas fa-edit mr-2 text-tkdRed"></i><span data-i18n="reg.form-title">賽事報名表</span>
+                                <i class="fas fa-edit mr-2 text-tkdRed"></i><span
+                                    data-i18n="reg.form-title">賽事報名表</span>
                             </h2>
                             <span class="hidden sm:block text-gray-600 text-xl shrink-0">|</span>
-                            
-                            <p id="reg-current-tour" class="text-xl text-white font-black m-0 leading-snug break-words"></p>
-                        </div>                        
-                        <span id="edit-badge" class="hidden bg-yellow-500 text-white text-[10px] font-black px-3 py-1.5 rounded-lg shadow-sm shrink-0 self-start sm:self-auto">編輯模式</span>
+
+                            <p id="reg-current-tour" class="text-xl text-white font-black m-0 leading-snug break-words">
+                            </p>
+                        </div>
+                        <span id="edit-badge"
+                            class="hidden bg-yellow-500 text-white text-[10px] font-black px-3 py-1.5 rounded-lg shadow-sm shrink-0 self-start sm:self-auto">編輯模式</span>
                     </div>
 
                     <div class="pt-4 sm:pt-5 pb-5 sm:pb-6 px-6 sm:px-10">
                         <form id="registrationForm">
                             <input type="hidden" id="editRecordId" value="">
-                            
-                            <div class="mb-4 sm:mb-6">                                
-                                <div class="flex flex-col md:flex-row md:items-start border-b border-gray-100 pb-3 mb-5 gap-3">                                    
-                                    <h3 class="font-black text-sm text-gray-400 tracking-widest uppercase shrink-0 m-0" data-i18n="reg.section1">
+
+                            <div class="mb-4 sm:mb-6">
+                                <div
+                                    class="flex flex-col md:flex-row md:items-start border-b border-gray-100 pb-3 mb-5 gap-3">
+                                    <h3 class="font-black text-sm text-gray-400 tracking-widest uppercase shrink-0 m-0"
+                                        data-i18n="reg.section1">
                                         1. 單位與職員資料
-                                    </h3>                                    
-                                    <div class="bg-blue-50 text-tkdBlue px-4 py-2 rounded-xl text-[11px] sm:text-xs font-bold flex items-start sm:items-center border border-blue-100 shadow-sm max-w-full md:-mt-2">
-                                        <i class="fas fa-info-circle text-sm sm:text-base mr-2 mt-0.5 sm:mt-0 shrink-0"></i>
+                                    </h3>
+                                    <div
+                                        class="bg-blue-50 text-tkdBlue px-4 py-2 rounded-xl text-[11px] sm:text-xs font-bold flex items-start sm:items-center border border-blue-100 shadow-sm max-w-full md:-mt-2">
+                                        <i
+                                            class="fas fa-info-circle text-sm sm:text-base mr-2 mt-0.5 sm:mt-0 shrink-0"></i>
                                         <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                                            <span class="font-black shrink-0" data-i18n="reg.multi-unit-title">多單位報名提醒</span>                                            
+                                            <span class="font-black shrink-0"
+                                                data-i18n="reg.multi-unit-title">多單位報名提醒</span>
                                             <span class="hidden sm:block text-blue-200 shrink-0">|</span>
-                                            <span class="leading-relaxed" data-i18n="reg.multi-unit-content">同一個帳號可以為「多個不同單位」進行報名，無須切換帳號。請直接更改下方「參賽單位」名稱即可送出新單位的資料。</span>
+                                            <span class="leading-relaxed"
+                                                data-i18n="reg.multi-unit-content">同一個帳號可以為「多個不同單位」進行報名，無須切換帳號。請直接更改下方「參賽單位」名稱即可送出新單位的資料。</span>
                                         </div>
-                                    </div>                                    
+                                    </div>
                                 </div>
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                                     <div class="relative">
-                                        <label class="block text-xs font-bold text-gray-600 mb-2"><span data-i18n="reg.unit">參賽單位</span> <span class="text-red-500">*</span></label>
-                                        <button type="button" onclick="window.openHistoryAutofillModal()" class="absolute right-0 top-0 -mt-1 text-[10px] bg-blue-50 text-tkdBlue px-2.5 py-1 rounded-md hover:bg-blue-100 font-black transition-colors shadow-sm active:scale-95 flex items-center">
-                                            <i class="fas fa-history mr-1"></i><span data-i18n="reg.auto-fill">帶入歷史資料</span>
+                                        <label class="block text-xs font-bold text-gray-600 mb-2"><span
+                                                data-i18n="reg.unit">參賽單位</span> <span
+                                                class="text-red-500">*</span></label>
+                                        <button type="button" onclick="window.openHistoryAutofillModal()"
+                                            class="absolute right-0 top-0 -mt-1 text-[10px] bg-blue-50 text-tkdBlue px-2.5 py-1 rounded-md hover:bg-blue-100 font-black transition-colors shadow-sm active:scale-95 flex items-center">
+                                            <i class="fas fa-history mr-1"></i><span
+                                                data-i18n="reg.auto-fill">帶入歷史資料</span>
                                         </button>
-                                        <input type="text" id="unit" name="unit" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdBlue focus:ring-2 focus:ring-tkdBlue/20 outline-none transition-all font-bold text-gray-800 bg-gray-50 focus:bg-white">
+                                        <input type="text" id="unit" name="unit" required
+                                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdBlue focus:ring-2 focus:ring-tkdBlue/20 outline-none transition-all font-bold text-gray-800 bg-gray-50 focus:bg-white">
                                     </div>
-                                    
+
                                     <div>
-                                        <label class="block text-xs font-bold text-gray-600 mb-2" data-i18n="reg.sub-team">分隊</label>
-                                        <select id="subTeam" name="subTeam" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdRed focus:ring-2 focus:ring-tkdRed/20 outline-none transition-all font-bold text-gray-800 bg-white cursor-pointer">
+                                        <label class="block text-xs font-bold text-gray-600 mb-2"
+                                            data-i18n="reg.sub-team">分隊</label>
+                                        <select id="subTeam" name="subTeam"
+                                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdRed focus:ring-2 focus:ring-tkdRed/20 outline-none transition-all font-bold text-gray-800 bg-white cursor-pointer">
                                             <option value="" selected></option>
                                             <option value="A隊">A隊</option>
                                             <option value="B隊">B隊</option>
@@ -398,37 +514,71 @@
                                             <option value="F隊">F隊</option>
                                         </select>
                                     </div>
-        
+
                                     <div>
                                         <label class="block text-xs font-bold text-gray-600 mb-2">
                                             <span data-i18n="reg.phone">連絡電話</span> <span class="text-red-500">*</span>
                                         </label>
-                                        <input type="tel" id="phone" name="phone" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdBlue focus:ring-2 focus:ring-tkdBlue/20 outline-none transition-all font-bold text-gray-800 bg-gray-50 focus:bg-white" data-i18n="reg.placeholder-phone" placeholder="手機號碼或市話">
-                                    </div>    
-                                    <div><label class="block text-xs font-bold text-gray-600 mb-2"><span data-i18n="reg.coach1">教練 1</span> <span class="text-red-500">*</span></label><input type="text" id="coach1" name="coach1" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdBlue focus:ring-2 focus:ring-tkdBlue/20 outline-none transition-all font-bold text-gray-800 bg-gray-50 focus:bg-white"></div>
-                                    <div><label class="block text-xs font-bold text-gray-600 mb-2" data-i18n="reg.coach2">教練 2</label><input type="text" id="coach2" name="coach2" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdBlue focus:ring-2 focus:ring-tkdBlue/20 outline-none transition-all font-bold text-gray-800 bg-gray-50 focus:bg-white"></div>
-                                    <div><label class="block text-xs font-bold text-gray-600 mb-2" data-i18n="reg.coach3">教練 3</label><input type="text" id="coach3" name="coach3" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdBlue focus:ring-2 focus:ring-tkdBlue/20 outline-none transition-all font-bold text-gray-800 bg-gray-50 focus:bg-white"></div>                                        
-                                    <div><label class="block text-xs font-bold text-gray-600 mb-2" data-i18n="reg.leader">領隊</label><input type="text" id="leader" name="leader" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdBlue focus:ring-2 focus:ring-tkdBlue/20 outline-none transition-all font-bold text-gray-800 bg-gray-50 focus:bg-white"></div>
-                                    <div><label class="block text-xs font-bold text-gray-600 mb-2" data-i18n="reg.manager">管理</label><input type="text" id="manager" name="manager" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdBlue focus:ring-2 focus:ring-tkdBlue/20 outline-none transition-all font-bold text-gray-800 bg-gray-50 focus:bg-white"></div>
+                                        <input type="tel" id="phone" name="phone"
+                                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdBlue focus:ring-2 focus:ring-tkdBlue/20 outline-none transition-all font-bold text-gray-800 bg-gray-50 focus:bg-white"
+                                            data-i18n="reg.placeholder-phone" placeholder="手機號碼或市話">
+                                    </div>
+                                    <div><label class="block text-xs font-bold text-gray-600 mb-2"><span
+                                                data-i18n="reg.coach1">教練 1</span> <span
+                                                class="text-red-500">*</span></label><input type="text" id="coach1"
+                                            name="coach1" required
+                                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdBlue focus:ring-2 focus:ring-tkdBlue/20 outline-none transition-all font-bold text-gray-800 bg-gray-50 focus:bg-white">
+                                    </div>
+                                    <div><label class="block text-xs font-bold text-gray-600 mb-2"
+                                            data-i18n="reg.coach2">教練 2</label><input type="text" id="coach2"
+                                            name="coach2"
+                                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdBlue focus:ring-2 focus:ring-tkdBlue/20 outline-none transition-all font-bold text-gray-800 bg-gray-50 focus:bg-white">
+                                    </div>
+                                    <div><label class="block text-xs font-bold text-gray-600 mb-2"
+                                            data-i18n="reg.coach3">教練 3</label><input type="text" id="coach3"
+                                            name="coach3"
+                                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdBlue focus:ring-2 focus:ring-tkdBlue/20 outline-none transition-all font-bold text-gray-800 bg-gray-50 focus:bg-white">
+                                    </div>
+                                    <div><label class="block text-xs font-bold text-gray-600 mb-2"
+                                            data-i18n="reg.leader">領隊</label><input type="text" id="leader"
+                                            name="leader"
+                                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdBlue focus:ring-2 focus:ring-tkdBlue/20 outline-none transition-all font-bold text-gray-800 bg-gray-50 focus:bg-white">
+                                    </div>
+                                    <div><label class="block text-xs font-bold text-gray-600 mb-2"
+                                            data-i18n="reg.manager">管理</label><input type="text" id="manager"
+                                            name="manager"
+                                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdBlue focus:ring-2 focus:ring-tkdBlue/20 outline-none transition-all font-bold text-gray-800 bg-gray-50 focus:bg-white">
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="mb-0">
-                                <h3 class="font-black text-sm text-gray-400 border-b border-gray-100 pb-2 mb-4 sm:mb-5 tracking-widest uppercase" data-i18n="reg.section2">
+                                <h3 class="font-black text-sm text-gray-400 border-b border-gray-100 pb-2 mb-4 sm:mb-5 tracking-widest uppercase"
+                                    data-i18n="reg.section2">
                                     2. 選手參賽資料</h3>
-                                
-                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-5 sm:mb-6 bg-blue-50/50 p-4 sm:p-6 rounded-2xl border border-blue-100 shadow-sm">
+
+                                <div
+                                    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-5 sm:mb-6 bg-blue-50/50 p-4 sm:p-6 rounded-2xl border border-blue-100 shadow-sm">
                                     <div>
-                                        <label class="block text-xs font-bold text-gray-600 mb-2"><span data-i18n="reg.item">參賽項目</span> <span class="text-red-500">*</span></label>
-                                        <select id="item" name="item" required onchange="window.onItemChange()" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdRed focus:ring-2 focus:ring-tkdRed/20 outline-none transition-all font-bold text-gray-800 bg-white cursor-pointer"></select>
+                                        <label class="block text-xs font-bold text-gray-600 mb-2"><span
+                                                data-i18n="reg.item">參賽項目</span> <span
+                                                class="text-red-500">*</span></label>
+                                        <select id="item" name="item" required onchange="window.onItemChange()"
+                                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdRed focus:ring-2 focus:ring-tkdRed/20 outline-none transition-all font-bold text-gray-800 bg-white cursor-pointer"></select>
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-bold text-gray-600 mb-2"><span data-i18n="reg.group">組別</span> <span class="text-red-500">*</span></label>
-                                        <select id="group" name="group" required onchange="window.onGroupChange()" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdRed focus:ring-2 focus:ring-tkdRed/20 outline-none transition-all font-bold text-gray-800 bg-white cursor-pointer"></select>
+                                        <label class="block text-xs font-bold text-gray-600 mb-2"><span
+                                                data-i18n="reg.group">組別</span> <span
+                                                class="text-red-500">*</span></label>
+                                        <select id="group" name="group" required onchange="window.onGroupChange()"
+                                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdRed focus:ring-2 focus:ring-tkdRed/20 outline-none transition-all font-bold text-gray-800 bg-white cursor-pointer"></select>
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-bold text-gray-600 mb-2"><span data-i18n="reg.level">量級/級別</span> <span class="text-red-500">*</span></label>
-                                        <select id="level" name="level" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdRed focus:ring-2 focus:ring-tkdRed/20 outline-none transition-all font-bold text-gray-800 bg-white cursor-pointer"></select>
+                                        <label class="block text-xs font-bold text-gray-600 mb-2"><span
+                                                data-i18n="reg.level">量級/級別</span> <span
+                                                class="text-red-500">*</span></label>
+                                        <select id="level" name="level" required
+                                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-tkdRed focus:ring-2 focus:ring-tkdRed/20 outline-none transition-all font-bold text-gray-800 bg-white cursor-pointer"></select>
                                     </div>
                                 </div>
 
@@ -436,12 +586,14 @@
                             </div>
 
                             <div class="flex flex-col sm:flex-row gap-3 mt-4 sm:mt-5">
-                                <button type="submit" id="btn-submit-reg" class="flex-grow py-4 bg-tkdRed text-white font-black rounded-xl shadow-md hover:bg-red-700 transition-all active:scale-[0.98] disabled:bg-gray-300 disabled:cursor-not-allowed flex justify-center items-center">
+                                <button type="submit" id="btn-submit-reg"
+                                    class="flex-grow py-4 bg-tkdRed text-white font-black rounded-xl shadow-md hover:bg-red-700 transition-all active:scale-[0.98] disabled:bg-gray-300 disabled:cursor-not-allowed flex justify-center items-center">
                                     <i class="fas fa-save mr-2"></i> <span data-i18n="reg.save">儲存並提交本筆資料</span>
                                 </button>
-                                <button type="button" id="btn-cancel-edit" onclick="window.cancelEdit()" class="hidden py-4 px-8 bg-gray-200 text-gray-700 font-black rounded-xl hover:bg-gray-300 transition-colors">取消編輯</button>
+                                <button type="button" id="btn-cancel-edit" onclick="window.cancelEdit()"
+                                    class="hidden py-4 px-8 bg-gray-200 text-gray-700 font-black rounded-xl hover:bg-gray-300 transition-colors">取消編輯</button>
                             </div>
-                            
+
                             <div class="mt-3 text-center"><span id="tournament-status-msg"></span></div>
                         </form>
                     </div>
@@ -453,7 +605,8 @@
                             <i class="fas fa-list-ul mr-2 text-tkdBlue"></i>
                             <span data-i18n="reg.user-records-title">您的報名紀錄與總表</span>
                         </h3>
-                        <span class="bg-tkdBlue/10 text-tkdBlue text-xs font-black px-3 py-1 rounded-lg" id="user-reg-count">0 筆</span>
+                        <span class="bg-tkdBlue/10 text-tkdBlue text-xs font-black px-3 py-1 rounded-lg"
+                            id="user-reg-count">0 筆</span>
                     </div>
                     <div class="bg-gray-50/30 p-4 sm:p-6" id="userTableBody"></div>
                     <div id="userNoDataMessage" class="hidden text-center py-16 text-gray-400 font-bold text-sm">
@@ -464,114 +617,225 @@
         </section>
 
         <section id="page-admin" class="page-section w-full px-4 sm:px-8 lg:px-12 pt-2 pb-2 sm:pt-4 sm:pb-4">
-            <div class="bg-white rounded-[2rem] shadow-xl border border-gray-100 relative">                
-                
-                <div class="sticky top-16 z-30 flex flex-col lg:flex-row justify-between items-center border-b border-gray-200 bg-white/95 backdrop-blur-md w-full shadow-sm rounded-t-[2rem]">
-                    
-                    <div class="px-6 lg:px-8 py-4 lg:py-0 shrink-0 flex items-center w-full lg:w-auto border-b lg:border-b-0 border-gray-100">
+            <div class="bg-white rounded-[2rem] shadow-xl border border-gray-100 relative">
+
+                <div
+                    class="sticky top-16 z-30 flex flex-col lg:flex-row justify-between items-center border-b border-gray-200 bg-white/95 backdrop-blur-md w-full shadow-sm rounded-t-[2rem]">
+
+                    <div
+                        class="px-6 lg:px-8 py-4 lg:py-0 shrink-0 flex items-center w-full lg:w-auto border-b lg:border-b-0 border-gray-100">
                         <h2 class="text-xl font-black text-gray-800 tracking-widest m-0 flex items-center">
                             <i class="fas fa-shield-alt mr-2 text-tkdRed"></i> 管理中心
                         </h2>
                     </div>
-                     
+
                     <nav class="flex overflow-x-auto no-scrollbar flex-grow w-full lg:w-auto px-2 lg:px-4">
-                        <button onclick="switchAdminTab('list')" id="tab-btn-list" class="admin-tab flex-shrink-0 px-4 sm:px-6 py-4 text-sm font-black text-tkdBlue border-b-2 border-tkdBlue transition-colors">賽事報名總表</button>
-                        <button onclick="switchAdminTab('users')" id="tab-btn-users" class="admin-tab flex-shrink-0 px-4 sm:px-6 py-4 text-sm font-black text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition-colors">報名帳號一覽</button>
-                        <button onclick="switchAdminTab('settings')" id="tab-btn-settings" class="admin-tab flex-shrink-0 px-4 sm:px-6 py-4 text-sm font-black text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition-colors">賽事架構設定</button>
-                        <button onclick="switchAdminTab('perms')" id="tab-btn-perms" class="hidden admin-tab flex-shrink-0 px-4 sm:px-6 py-4 text-sm font-black text-purple-600 border-b-2 border-transparent hover:text-purple-700 transition-colors"><i class="fas fa-crown mr-1"></i>權限管理</button>
+                        <button onclick="switchAdminTab('list')" id="tab-btn-list"
+                            class="admin-tab flex-shrink-0 px-4 sm:px-6 py-4 text-sm font-black text-tkdBlue border-b-2 border-tkdBlue transition-colors">賽事報名總表</button>
+                        <button onclick="switchAdminTab('users')" id="tab-btn-users"
+                            class="admin-tab flex-shrink-0 px-4 sm:px-6 py-4 text-sm font-black text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition-colors">報名帳號一覽</button>
+                        <button onclick="switchAdminTab('settings')" id="tab-btn-settings"
+                            class="admin-tab flex-shrink-0 px-4 sm:px-6 py-4 text-sm font-black text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition-colors">賽事架構設定</button>
+                        <button onclick="switchAdminTab('perms')" id="tab-btn-perms"
+                            class="hidden admin-tab flex-shrink-0 px-4 sm:px-6 py-4 text-sm font-black text-purple-600 border-b-2 border-transparent hover:text-purple-700 transition-colors"><i
+                                class="fas fa-crown mr-1"></i>權限管理</button>
                     </nav>
-                    
-                    <div id="admin-save-container" class="hidden items-center gap-3 px-4 sm:px-6 py-3 lg:py-0 shrink-0 lg:border-l border-gray-200 z-10 w-full lg:w-auto justify-end bg-gray-50 lg:bg-transparent">
-                        <span id="save-msg" class="text-green-600 text-xs font-bold hidden bg-green-50 px-2 py-1 rounded-lg border border-green-100 whitespace-nowrap"><i class="fas fa-check-circle mr-1"></i>已更新</span>
-                        <button type="submit" form="settingsForm" id="btn-save-settings" class="bg-tkdRed text-white font-black px-4 sm:px-6 py-2.5 rounded-xl shadow-sm hover:bg-red-700 transition-all active:scale-[0.98] text-xs sm:text-sm whitespace-nowrap flex items-center">
-                            <i class="fas fa-save sm:mr-2 mr-1"></i><span class="hidden sm:inline">儲存所有設定檔</span><span class="inline sm:hidden">儲存</span>
+
+                    <div id="admin-save-container"
+                        class="hidden items-center gap-3 px-4 sm:px-6 py-3 lg:py-0 shrink-0 lg:border-l border-gray-200 z-10 w-full lg:w-auto justify-end bg-gray-50 lg:bg-transparent">
+                        <span id="save-msg"
+                            class="text-green-600 text-xs font-bold hidden bg-green-50 px-2 py-1 rounded-lg border border-green-100 whitespace-nowrap"><i
+                                class="fas fa-check-circle mr-1"></i>已更新</span>
+                        <button type="submit" form="settingsForm" id="btn-save-settings"
+                            class="bg-tkdRed text-white font-black px-4 sm:px-6 py-2.5 rounded-xl shadow-sm hover:bg-red-700 transition-all active:scale-[0.98] text-xs sm:text-sm whitespace-nowrap flex items-center">
+                            <i class="fas fa-save sm:mr-2 mr-1"></i><span class="hidden sm:inline">儲存所有設定檔</span><span
+                                class="inline sm:hidden">儲存</span>
                         </button>
                     </div>
                 </div>
 
-                <div id="admin-presence-banner" class="hidden items-center bg-orange-100 border-l-4 border-orange-500 text-orange-800 text-sm px-5 py-4 mx-2 sm:mx-8 mt-6 rounded-xl shadow-sm animate-pulse transition-all">
+                <div id="admin-presence-banner"
+                    class="hidden items-center bg-orange-100 border-l-4 border-orange-500 text-orange-800 text-sm px-5 py-4 mx-2 sm:mx-8 mt-6 rounded-xl shadow-sm animate-pulse transition-all">
                 </div>
-                <div id="admin-view-list" class="admin-view block bg-gray-50/50 pt-2 pb-4 px-4 sm:pt-4 sm:pb-8 sm:px-8 min-h-[500px]">
-                    <div class="flex flex-col lg:flex-row bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6 gap-4 items-center">
+                <div id="admin-view-list"
+                    class="admin-view block bg-gray-50/50 pt-2 pb-4 px-4 sm:pt-4 sm:pb-8 sm:px-8 min-h-[500px]">
+                    <div
+                        class="flex flex-col lg:flex-row bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6 gap-4 items-center">
                         <div class="flex items-center gap-4 flex-1 w-full">
-                            <div class="bg-tkdBlue text-white p-3.5 rounded-xl shadow-inner hidden sm:block shrink-0"><i class="fas fa-filter text-lg"></i></div>
+                            <div class="bg-tkdBlue text-white p-3.5 rounded-xl shadow-inner hidden sm:block shrink-0"><i
+                                    class="fas fa-filter text-lg"></i></div>
                             <div class="flex-grow">
-                                <label class="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5">請選擇要查看的賽事</label>
-                                <select id="admin-tour-filter" onchange="window.renderAdminRegistrations()" class="font-bold text-gray-800 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 outline-none w-full cursor-pointer text-sm focus:border-tkdBlue focus:ring-2 focus:ring-blue-50 transition-all appearance-none">
+                                <label
+                                    class="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5">請選擇要查看的賽事</label>
+                                <select id="admin-tour-filter" onchange="window.renderAdminRegistrations()"
+                                    class="font-bold text-gray-800 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 outline-none w-full cursor-pointer text-sm focus:border-tkdBlue focus:ring-2 focus:ring-blue-50 transition-all appearance-none">
                                     <option value="">(載入中...)</option>
                                 </select>
                             </div>
                         </div>
                         <div class="flex items-center gap-4 flex-1 w-full">
                             <div class="flex-grow">
-                                <label class="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5">搜尋單位或選手</label>
+                                <label
+                                    class="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5">搜尋單位或選手</label>
                                 <div class="relative w-full">
                                     <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                    <input type="text" id="admin-search-input" oninput="window.debouncedRenderAdminRegistrations()" placeholder="輸入關鍵字搜尋..." class="font-bold text-gray-800 bg-gray-50 border border-gray-200 rounded-xl pl-11 pr-4 py-2.5 outline-none w-full text-sm focus:border-tkdBlue focus:ring-2 focus:ring-blue-50 transition-all">
+                                    <input type="text" id="admin-search-input"
+                                        oninput="window.debouncedRenderAdminRegistrations()" placeholder="輸入關鍵字搜尋..."
+                                        class="font-bold text-gray-800 bg-gray-50 border border-gray-200 rounded-xl pl-11 pr-4 py-2.5 outline-none w-full text-sm focus:border-tkdBlue focus:ring-2 focus:ring-blue-50 transition-all">
                                 </div>
                             </div>
                         </div>
-                        
-                        <div class="flex flex-col sm:flex-row items-center shrink-0 w-full lg:w-auto mt-4 lg:mt-0 lg:pl-4 lg:border-l border-gray-100 gap-3">
-    
-                            <button onclick="window.adminAddRecord()" class="w-full sm:w-auto bg-tkdRed text-white px-5 py-3 rounded-xl font-bold hover:bg-red-500 transition-colors text-sm flex items-center justify-center shadow-sm whitespace-nowrap">
+
+                        <div
+                            class="flex flex-col sm:flex-row items-center shrink-0 w-full lg:w-auto mt-4 lg:mt-0 lg:pl-4 lg:border-l border-gray-100 gap-3">
+
+                            <button onclick="window.adminAddRecord()"
+                                class="w-full sm:w-auto bg-tkdRed text-white px-5 py-3 rounded-xl font-bold hover:bg-red-500 transition-colors text-sm flex items-center justify-center shadow-sm whitespace-nowrap">
                                 <i class="fas fa-plus mr-2"></i> 新增報名
                             </button>
-                        
-                            <button onclick="window.generateEntryList()" class="w-full sm:w-auto bg-blue-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-blue-500 transition-colors text-sm flex items-center justify-center shadow-sm whitespace-nowrap">
+
+                            <button onclick="window.generateEntryList()"
+                                class="w-full sm:w-auto bg-blue-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-blue-500 transition-colors text-sm flex items-center justify-center shadow-sm whitespace-nowrap">
                                 <i class="fas fa-list-ol mr-2"></i> 列印核對名單
                             </button>
 
-                            <button onclick="window.generateTeamStaffList()" class="w-full sm:w-auto bg-purple-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-purple-500 transition-colors text-sm flex items-center justify-center shadow-sm whitespace-nowrap">
+                            <button onclick="window.generateTeamStaffList()"
+                                class="w-full sm:w-auto bg-purple-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-purple-500 transition-colors text-sm flex items-center justify-center shadow-sm whitespace-nowrap">
                                 <i class="fas fa-print mr-2"></i> 列印隊職員
                             </button>
-                            
+
                         </div>
                     </div>
 
                     <div id="admin-stats-dashboard" class="hidden mb-8">
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                            <div class="bg-white p-5 rounded-2xl border-l-4 border-blue-500 shadow-sm flex justify-between items-center">
-                                <div><div class="text-[11px] text-gray-400 font-black tracking-widest mb-1">參賽單位總數</div><div id="admin-stat-units" class="text-3xl font-black text-gray-800">0</div></div>
-                                <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center text-xl"><i class="fas fa-shield-alt"></i></div>
+                            <div
+                                class="bg-white p-5 rounded-2xl border-l-4 border-blue-500 shadow-sm flex justify-between items-center">
+                                <div>
+                                    <div class="text-[11px] text-gray-400 font-black tracking-widest mb-1">參賽單位總數</div>
+                                    <div id="admin-stat-units" class="text-3xl font-black text-gray-800">0</div>
+                                </div>
+                                <div
+                                    class="w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center text-xl">
+                                    <i class="fas fa-shield-alt"></i></div>
                             </div>
-                            <div class="bg-white p-5 rounded-2xl border-l-4 border-red-500 shadow-sm flex justify-between items-center">
-                                <div><div class="text-[11px] text-gray-400 font-black tracking-widest mb-1">總報名選手數</div><div id="admin-stat-players" class="text-3xl font-black text-gray-800">0</div></div>
-                                <div class="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center text-xl"><i class="fas fa-users"></i></div>
+                            <div
+                                class="bg-white p-5 rounded-2xl border-l-4 border-red-500 shadow-sm flex justify-between items-center">
+                                <div>
+                                    <div class="text-[11px] text-gray-400 font-black tracking-widest mb-1">總報名選手數</div>
+                                    <div id="admin-stat-players" class="text-3xl font-black text-gray-800">0</div>
+                                </div>
+                                <div
+                                    class="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center text-xl">
+                                    <i class="fas fa-users"></i></div>
                             </div>
-                            <div class="bg-white p-5 rounded-2xl border-l-4 border-green-500 shadow-sm flex justify-between items-center col-span-2 md:col-span-1">
-                                <div><div class="text-[11px] text-gray-400 font-black tracking-widest mb-1">預估總報名費</div><div class="text-3xl font-black text-gray-800 flex items-baseline gap-1"><span class="text-sm text-gray-400 mr-1">NT$</span><span id="admin-stat-fee">0</span></div></div>
-                                <div class="w-12 h-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center text-xl"><i class="fas fa-sack-dollar"></i></div>
+                            <div
+                                class="bg-white p-5 rounded-2xl border-l-4 border-green-500 shadow-sm flex justify-between items-center col-span-2 md:col-span-1">
+                                <div>
+                                    <div class="text-[11px] text-gray-400 font-black tracking-widest mb-1">預估總報名費</div>
+                                    <div class="text-3xl font-black text-gray-800 flex items-baseline gap-1"><span
+                                            class="text-sm text-gray-400 mr-1">NT$</span><span
+                                            id="admin-stat-fee">0</span></div>
+                                </div>
+                                <div
+                                    class="w-12 h-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center text-xl">
+                                    <i class="fas fa-sack-dollar"></i></div>
                             </div>
                         </div>
                         <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                            <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 border-b border-gray-100 pb-2"><i class="fas fa-chart-pie mr-2"></i>各項目人數與財務分析</h4>
-                            <div id="admin-item-breakdown" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+                            <h4
+                                class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 border-b border-gray-100 pb-2">
+                                <i class="fas fa-chart-pie mr-2"></i>各項目人數與財務分析</h4>
+                            <div id="admin-item-breakdown"
+                                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
                         </div>
                     </div>
-                    
+
+                    <!-- 手機端專屬狀態篩選選單 (置於單位列表最上方) -->
+                    <div class="sm:hidden mb-4">
+                        <label class="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5"><i
+                                class="fas fa-filter mr-1 text-tkdBlue"></i>狀態過濾器 (篩選單位列表)</label>
+                        <select id="admin-status-filter" onchange="window.setAdminStatusFilter(this.value)"
+                            class="font-bold text-gray-800 bg-white border border-gray-200 rounded-xl px-4 py-3 outline-none w-full cursor-pointer text-sm shadow-sm focus:border-tkdBlue focus:ring-2 focus:ring-blue-50 transition-all">
+                            <option value="all">📌 全部狀態</option>
+                            <option value="pending_or_resubmitted">🔄 待確認／已補件 (優先處理)</option>
+                            <option value="resubmitted">💜 已補件／已重新上傳</option>
+                            <option value="pending">🟡 待確認 (初次上傳)</option>
+                            <option value="verified">🟢 已確認</option>
+                            <option value="rejected">🔴 資料錯誤 (待修正)</option>
+                            <option value="not_uploaded">⚪ 未上傳</option>
+                        </select>
+                    </div>
+
+                    <!-- 狀態篩選與列印篩選後內容列 -->
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-5">
+                        <div class="hidden sm:flex flex-wrap items-center gap-2">
+                            <button type="button" onclick="window.setAdminStatusFilter('all')" id="btn-status-all"
+                                class="admin-status-pill bg-gray-800 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl transition-all shadow-sm">全部狀態</button>
+                            <button type="button" onclick="window.setAdminStatusFilter('pending_or_resubmitted')"
+                                id="btn-status-pending_or_resubmitted"
+                                class="admin-status-pill bg-white text-gray-600 hover:bg-gray-100 font-bold text-xs px-3.5 py-1.5 rounded-xl border border-gray-200 transition-all">🔄
+                                待確認／已補件</button>
+                            <button type="button" onclick="window.setAdminStatusFilter('resubmitted')"
+                                id="btn-status-resubmitted"
+                                class="admin-status-pill bg-white text-gray-600 hover:bg-gray-100 font-bold text-xs px-3.5 py-1.5 rounded-xl border border-gray-200 transition-all">💜
+                                已補件</button>
+                            <button type="button" onclick="window.setAdminStatusFilter('pending')"
+                                id="btn-status-pending"
+                                class="admin-status-pill bg-white text-gray-600 hover:bg-gray-100 font-bold text-xs px-3.5 py-1.5 rounded-xl border border-gray-200 transition-all">🟡
+                                待確認</button>
+                            <button type="button" onclick="window.setAdminStatusFilter('verified')"
+                                id="btn-status-verified"
+                                class="admin-status-pill bg-white text-gray-600 hover:bg-gray-100 font-bold text-xs px-3.5 py-1.5 rounded-xl border border-gray-200 transition-all">🟢
+                                已確認</button>
+                            <button type="button" onclick="window.setAdminStatusFilter('rejected')"
+                                id="btn-status-rejected"
+                                class="admin-status-pill bg-white text-gray-600 hover:bg-gray-100 font-bold text-xs px-3.5 py-1.5 rounded-xl border border-gray-200 transition-all">🔴
+                                資料錯誤</button>
+                            <button type="button" onclick="window.setAdminStatusFilter('not_uploaded')"
+                                id="btn-status-not_uploaded"
+                                class="admin-status-pill bg-white text-gray-600 hover:bg-gray-100 font-bold text-xs px-3.5 py-1.5 rounded-xl border border-gray-200 transition-all">⚪
+                                未上傳</button>
+                        </div>
+                        <button type="button" onclick="window.printFilteredRegistrations()"
+                            class="sm:ml-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 sm:py-2 rounded-xl transition-all shadow-sm flex items-center justify-center shrink-0 active:scale-[0.98]">
+                            <i class="fas fa-print mr-1.5"></i>列印收費狀況表
+                        </button>
+                    </div>
+
                     <div id="admin-registrations-container" class="space-y-6 sm:space-y-8"></div>
-                    <div id="adminNoDataMessage" class="hidden text-center py-20 text-gray-400 font-bold text-sm bg-white rounded-2xl border border-gray-100 shadow-sm">
-                        <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-200"><i class="fas fa-folder-open text-3xl"></i></div>
+                    <div id="adminNoDataMessage"
+                        class="hidden text-center py-20 text-gray-400 font-bold text-sm bg-white rounded-2xl border border-gray-100 shadow-sm">
+                        <div
+                            class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-200">
+                            <i class="fas fa-folder-open text-3xl"></i></div>
                         此賽事目前無報名資料，或尚未選擇賽事。
                     </div>
                 </div>
 
-                <div id="admin-view-users" class="admin-view hidden bg-gray-50/50 pt-2 pb-6 px-6 sm:pt-4 sm:pb-8 sm:px-8 min-h-[500px]">
-                    
-                    <div class="flex flex-col sm:flex-row gap-3 mb-6 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm items-center">
+                <div id="admin-view-users"
+                    class="admin-view hidden bg-gray-50/50 pt-2 pb-6 px-6 sm:pt-4 sm:pb-8 sm:px-8 min-h-[500px]">
+
+                    <div
+                        class="flex flex-col sm:flex-row gap-3 mb-6 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm items-center">
                         <div class="relative flex-grow w-full">
                             <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                            <input type="text" id="admin-user-search" oninput="window.renderAdminUsersList()" placeholder="搜尋帳號、單位或教練 (或輸入完整 Email 進行封鎖)..." class="font-bold text-gray-800 bg-gray-50 border border-gray-200 rounded-xl pl-11 pr-4 py-2.5 outline-none w-full text-sm focus:border-tkdBlue focus:ring-2 focus:ring-blue-50 transition-all">
+                            <input type="text" id="admin-user-search" oninput="window.renderAdminUsersList()"
+                                placeholder="搜尋帳號、單位或教練 (或輸入完整 Email 進行封鎖)..."
+                                class="font-bold text-gray-800 bg-gray-50 border border-gray-200 rounded-xl pl-11 pr-4 py-2.5 outline-none w-full text-sm focus:border-tkdBlue focus:ring-2 focus:ring-blue-50 transition-all">
                         </div>
-                        <button type="button" onclick="window.manualBlock()" class="bg-red-600 text-white px-5 py-2.5 rounded-xl font-black shadow-sm hover:bg-red-700 transition-colors text-sm whitespace-nowrap shrink-0 flex items-center active:scale-95">
+                        <button type="button" onclick="window.manualBlock()"
+                            class="bg-red-600 text-white px-5 py-2.5 rounded-xl font-black shadow-sm hover:bg-red-700 transition-colors text-sm whitespace-nowrap shrink-0 flex items-center active:scale-95">
                             <i class="fas fa-ban mr-2"></i>封鎖
                         </button>
                     </div>
 
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto sm:overflow-visible">
-                        <table class="w-full text-left text-sm text-gray-600 whitespace-normal sm:whitespace-nowrap block sm:table">
-                            <thead class="hidden sm:table-header-group bg-gray-100 text-xs text-gray-500 font-black uppercase tracking-wider border-b border-gray-200">
+                    <div
+                        class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden overflow-x-auto sm:overflow-visible">
+                        <table
+                            class="w-full text-left text-sm text-gray-600 whitespace-normal sm:whitespace-nowrap block sm:table">
+                            <thead
+                                class="hidden sm:table-header-group bg-gray-100 text-xs text-gray-500 font-black uppercase tracking-wider border-b border-gray-200">
                                 <tr>
                                     <th class="px-6 py-4">註冊帳號 (Email)</th>
                                     <th class="px-6 py-4">曾報名之單位 (不分賽事)</th>
@@ -585,23 +849,30 @@
                     </div>
                 </div>
 
-                <div id="admin-view-settings" class="admin-view hidden pt-2 pb-6 px-6 sm:pt-4 sm:pb-10 sm:px-10 bg-white min-h-[500px]">
+                <div id="admin-view-settings"
+                    class="admin-view hidden pt-2 pb-6 px-6 sm:pt-4 sm:pb-10 sm:px-10 bg-white min-h-[500px]">
                     <form id="settingsForm">
-                        
+
                         <div id="settings-main-view" class="fade-in">
-                            
+
                             <div class="mb-10">
                                 <div class="flex justify-between items-end border-b border-gray-200 pb-3 mb-6">
                                     <h3 class="text-lg font-black text-gray-800">賽事檔期管理</h3>
-                                    <button type="button" onclick="window.addTournamentUI()" class="text-xs bg-tkdDark text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-800 transition-colors shadow-sm">+ 新增賽事</button>
+                                    <button type="button" onclick="window.addTournamentUI()"
+                                        class="text-xs bg-tkdDark text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-800 transition-colors shadow-sm">+
+                                        新增賽事</button>
                                 </div>
                                 <div id="tournaments-editor" class="space-y-4"></div>
                             </div>
 
                             <div class="mb-10 p-6 bg-gray-50 rounded-2xl border border-gray-200 shadow-sm">
-                                <h3 class="text-sm font-black text-gray-800 mb-2 border-l-4 border-tkdBlue pl-2">主辦名單設定</h3>
-                                <label class="block text-xs font-bold text-gray-500 mb-2">請輸入系統可選的單位名稱 (請使用半形逗號 <span class="text-red-500 text-base">,</span> 分隔)</label>
-                                <input type="text" id="global-cities-input" class="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none font-bold focus:border-tkdBlue focus:ring-2 focus:ring-blue-50 transition-all bg-white" placeholder="例如: 台北市,新北市,桃園市,台中市,台南市,高雄市">
+                                <h3 class="text-sm font-black text-gray-800 mb-2 border-l-4 border-tkdBlue pl-2">主辦名單設定
+                                </h3>
+                                <label class="block text-xs font-bold text-gray-500 mb-2">請輸入系統可選的單位名稱 (請使用半形逗號 <span
+                                        class="text-red-500 text-base">,</span> 分隔)</label>
+                                <input type="text" id="global-cities-input"
+                                    class="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none font-bold focus:border-tkdBlue focus:ring-2 focus:ring-blue-50 transition-all bg-white"
+                                    placeholder="例如: 台北市,新北市,桃園市,台中市,台南市,高雄市">
                             </div>
 
                             <div class="mb-10 p-6 bg-gray-50 rounded-2xl border border-gray-200 shadow-sm">
@@ -610,60 +881,79 @@
                                         <i class="fas fa-trash-restore mr-2 text-gray-500"></i>賽事回收桶
                                         <span class="ml-2 text-xs font-normal text-red-500">(須手動清空，刪除後無法復原)</span>
                                     </h3>
-                                    <button type="button" onclick="window.clearRecycleBin()" class="text-xs bg-red-100 text-red-600 px-4 py-2 rounded-lg font-bold hover:bg-red-200 transition-colors shadow-sm"><i class="fas fa-dumpster-fire mr-1"></i> 一鍵清空</button>
+                                    <button type="button" onclick="window.clearRecycleBin()"
+                                        class="text-xs bg-red-100 text-red-600 px-4 py-2 rounded-lg font-bold hover:bg-red-200 transition-colors shadow-sm"><i
+                                            class="fas fa-dumpster-fire mr-1"></i> 一鍵清空</button>
                                 </div>
                                 <div id="recycle-bin-container" class="space-y-3"></div>
                             </div>
 
-                            <div id="super-admin-backup-area" class="mb-8 p-6 bg-blue-50 rounded-2xl border border-blue-200 shadow-sm hidden flex-col md:flex-row justify-between items-center gap-6">
+                            <div id="super-admin-backup-area"
+                                class="mb-8 p-6 bg-blue-50 rounded-2xl border border-blue-200 shadow-sm hidden flex-col md:flex-row justify-between items-center gap-6">
                                 <div class="flex-grow w-full">
-                                    <h3 class="text-sm font-black text-tkdBlue mb-1"><i class="fas fa-database mr-2"></i>全站資料備份與還原</h3>
-                                    <p class="text-xs font-bold text-gray-500 mb-4">將目前的系統架構與報名資料打包下載；或在發生意外時，上傳備份檔進行覆蓋還原。</p>
-                                    <input type="file" id="backup-file-input" accept=".json" class="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 transition-colors cursor-pointer">
+                                    <h3 class="text-sm font-black text-tkdBlue mb-1"><i
+                                            class="fas fa-database mr-2"></i>全站資料備份與還原</h3>
+                                    <p class="text-xs font-bold text-gray-500 mb-4">
+                                        將目前的系統架構與報名資料打包下載；或在發生意外時，上傳備份檔進行覆蓋還原。</p>
+                                    <input type="file" id="backup-file-input" accept=".json"
+                                        class="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 transition-colors cursor-pointer">
                                 </div>
-                                <div class="flex flex-col sm:flex-row gap-3 shrink-0 w-full md:w-auto flex-wrap justify-end">
+                                <div
+                                    class="flex flex-col sm:flex-row gap-3 shrink-0 w-full md:w-auto flex-wrap justify-end">
                                     <!-- ✨ 新增的校正工具按鈕 -->
-                                    <button type="button" onclick="window.fixHistoricalStaffData()" id="btn-fix-staff" class="w-full sm:w-auto bg-purple-600 text-white px-5 py-3 rounded-xl text-sm font-black shadow-md hover:bg-purple-700 transition-colors flex items-center justify-center whitespace-nowrap active:scale-[0.98]">
+                                    <button type="button" onclick="window.fixHistoricalStaffData()" id="btn-fix-staff"
+                                        class="w-full sm:w-auto bg-purple-600 text-white px-5 py-3 rounded-xl text-sm font-black shadow-md hover:bg-purple-700 transition-colors flex items-center justify-center whitespace-nowrap active:scale-[0.98]">
                                         <i class="fas fa-tools mr-2"></i> 校正歷史隊職員
                                     </button>
-                                    
-                                    <button type="button" onclick="window.exportFullBackup()" id="btn-full-backup" class="w-full sm:w-auto bg-tkdBlue text-white px-5 py-3 rounded-xl text-sm font-black shadow-md hover:bg-blue-700 transition-colors flex items-center justify-center whitespace-nowrap active:scale-[0.98]">
+
+                                    <button type="button" onclick="window.exportFullBackup()" id="btn-full-backup"
+                                        class="w-full sm:w-auto bg-tkdBlue text-white px-5 py-3 rounded-xl text-sm font-black shadow-md hover:bg-blue-700 transition-colors flex items-center justify-center whitespace-nowrap active:scale-[0.98]">
                                         <i class="fas fa-cloud-download-alt mr-2"></i> 下載備份
                                     </button>
-                                    
-                                    <button type="button" onclick="window.restoreFullBackup()" id="btn-full-restore" class="w-full sm:w-auto bg-red-600 text-white px-5 py-3 rounded-xl text-sm font-black shadow-md hover:bg-red-700 transition-colors flex items-center justify-center whitespace-nowrap active:scale-[0.98]">
+
+                                    <button type="button" onclick="window.restoreFullBackup()" id="btn-full-restore"
+                                        class="w-full sm:w-auto bg-red-600 text-white px-5 py-3 rounded-xl text-sm font-black shadow-md hover:bg-red-700 transition-colors flex items-center justify-center whitespace-nowrap active:scale-[0.98]">
                                         <i class="fas fa-cloud-upload-alt mr-2"></i> 執行還原
                                     </button>
                                 </div>
                             </div>
                         </div>
                         <div id="detailed-settings-box" class="hidden fade-in mt-0 sm:mt-2">
-                            <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-8 border-b border-gray-200 pb-4">
-                                <button type="button" onclick="window.closeDetailSettings()" class="self-start text-gray-600 hover:text-tkdBlue bg-gray-50 border border-gray-200 hover:bg-blue-50 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-colors flex items-center">
+                            <div
+                                class="flex flex-col sm:flex-row sm:items-center gap-4 mb-8 border-b border-gray-200 pb-4">
+                                <button type="button" onclick="window.closeDetailSettings()"
+                                    class="self-start text-gray-600 hover:text-tkdBlue bg-gray-50 border border-gray-200 hover:bg-blue-50 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-colors flex items-center">
                                     <i class="fas fa-arrow-left mr-2"></i>返回賽事列表
                                 </button>
-                                <h4 class="text-lg font-black text-tkdBlue m-0">正在編輯：<span id="current-edit-tour-name" class="text-gray-800 ml-2"></span></h4>
+                                <h4 class="text-lg font-black text-tkdBlue m-0">正在編輯：<span id="current-edit-tour-name"
+                                        class="text-gray-800 ml-2"></span></h4>
                             </div>
 
                             <div class="space-y-4 mb-8">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block font-bold text-gray-500 text-xs mb-1">規程標題 (中文)</label>
-                                        <input type="text" id="set-tour-title" class="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none font-bold bg-gray-50 focus:bg-white focus:ring-2 focus:ring-tkdBlue/20 transition-colors">
+                                        <input type="text" id="set-tour-title"
+                                            class="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none font-bold bg-gray-50 focus:bg-white focus:ring-2 focus:ring-tkdBlue/20 transition-colors">
                                     </div>
                                     <div>
                                         <label class="block font-bold text-gray-400 text-xs mb-1">規程標題 (英文)</label>
-                                        <input type="text" id="set-tour-title-en" class="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none font-bold bg-gray-50 focus:bg-white focus:ring-2 focus:ring-tkdBlue/20 transition-colors" placeholder="English Title">
+                                        <input type="text" id="set-tour-title-en"
+                                            class="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none font-bold bg-gray-50 focus:bg-white focus:ring-2 focus:ring-tkdBlue/20 transition-colors"
+                                            placeholder="English Title">
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block font-bold text-gray-500 text-xs mb-1">規程詳細內容 (中文)</label>
-                                        <textarea id="set-tour-rules" rows="8" class="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-tkdBlue/20 transition-colors"></textarea>
+                                        <textarea id="set-tour-rules" rows="8"
+                                            class="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-tkdBlue/20 transition-colors"></textarea>
                                     </div>
                                     <div>
                                         <label class="block font-bold text-gray-400 text-xs mb-1">規程詳細內容 (英文)</label>
-                                        <textarea id="set-tour-rules-en" rows="8" class="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-tkdBlue/20 transition-colors" placeholder="English Rules Content"></textarea>
+                                        <textarea id="set-tour-rules-en" rows="8"
+                                            class="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-tkdBlue/20 transition-colors"
+                                            placeholder="English Rules Content"></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -672,42 +962,59 @@
                                 <h5 class="font-black text-sm text-gray-600 border-l-4 border-tkdRed pl-2 m-0">
                                     報名項目、組別、級別與費用設定
                                 </h5>
-                                
+
                                 <div class="flex items-center gap-2 sm:gap-3">
-                                    <button type="button" onclick="window.toggleAllItems(true)" class="flex-1 lg:flex-initial bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs sm:text-sm font-bold px-3 sm:px-4 py-2 rounded-xl transition-colors flex justify-center items-center shadow-sm">
-                                        <i class="fas fa-compress-alt mr-1.5 text-gray-500"></i>全部收合 <span class="hidden sm:inline ml-1 text-gray-500 font-normal text-xs">(進入排序模式)</span>
+                                    <button type="button" onclick="window.toggleAllItems(true)"
+                                        class="flex-1 lg:flex-initial bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs sm:text-sm font-bold px-3 sm:px-4 py-2 rounded-xl transition-colors flex justify-center items-center shadow-sm">
+                                        <i class="fas fa-compress-alt mr-1.5 text-gray-500"></i>全部收合 <span
+                                            class="hidden sm:inline ml-1 text-gray-500 font-normal text-xs">(進入排序模式)</span>
                                     </button>
-                                    <button type="button" onclick="window.toggleAllItems(false)" class="flex-1 lg:flex-initial bg-blue-50 hover:bg-blue-100 text-tkdBlue text-xs sm:text-sm font-bold px-3 sm:px-4 py-2 rounded-xl transition-colors flex justify-center items-center shadow-sm border border-blue-100">
-                                        <i class="fas fa-expand-arrows-alt mr-1.5"></i>全部展開 <span class="hidden sm:inline ml-1 opacity-70 font-normal text-xs">(進入編輯模式)</span>
+                                    <button type="button" onclick="window.toggleAllItems(false)"
+                                        class="flex-1 lg:flex-initial bg-blue-50 hover:bg-blue-100 text-tkdBlue text-xs sm:text-sm font-bold px-3 sm:px-4 py-2 rounded-xl transition-colors flex justify-center items-center shadow-sm border border-blue-100">
+                                        <i class="fas fa-expand-arrows-alt mr-1.5"></i>全部展開 <span
+                                            class="hidden sm:inline ml-1 opacity-70 font-normal text-xs">(進入編輯模式)</span>
                                     </button>
                                 </div>
                             </div>
 
-                            <div id="linkage-editor" class="space-y-6 bg-white p-6 rounded-2xl border border-gray-200 mb-8"></div>
-                            <button type="button" onclick="window.addItemUI()" class="mt-[-1rem] mb-8 text-xs text-tkdBlue font-bold hover:underline block">+ 新增一個報名項目</button>
-                            
+                            <div id="linkage-editor"
+                                class="space-y-6 bg-white p-6 rounded-2xl border border-gray-200 mb-8"></div>
+                            <button type="button" onclick="window.addItemUI()"
+                                class="mt-[-1rem] mb-8 text-xs text-tkdBlue font-bold hover:underline block">+
+                                新增一個報名項目</button>
+
                             <h5 class="font-black text-sm text-gray-600 mb-3 border-l-4 border-tkdRed pl-2">規程附件連結</h5>
-                            <div id="attachments-editor" class="space-y-3 bg-white p-6 rounded-2xl border border-gray-200"></div>
-                            <button type="button" onclick="window.addAttachmentUI()" class="mt-3 text-xs text-blue-600 font-bold hover:underline">+ 新增一個附件連結</button>                        
+                            <div id="attachments-editor"
+                                class="space-y-3 bg-white p-6 rounded-2xl border border-gray-200"></div>
+                            <button type="button" onclick="window.addAttachmentUI()"
+                                class="mt-3 text-xs text-blue-600 font-bold hover:underline">+ 新增一個附件連結</button>
                         </div>
-                        </form>
+                    </form>
                 </div>
 
-                <div id="admin-view-perms" class="admin-view hidden pt-2 pb-6 px-6 sm:pt-4 sm:pb-10 sm:px-10 bg-white min-h-[500px]">
+                <div id="admin-view-perms"
+                    class="admin-view hidden pt-2 pb-6 px-6 sm:pt-4 sm:pb-10 sm:px-10 bg-white min-h-[500px]">
                     <h3 class="text-lg font-black text-gray-800 mb-6 border-b pb-3 flex items-center">
                         <i class="fas fa-user-shield text-purple-600 mr-2"></i> 管理員權限設定
-                        <span class="ml-3 text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold">僅超級管理員可見</span>
+                        <span
+                            class="ml-3 text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-bold">僅超級管理員可見</span>
                     </h3>
-                    <div class="flex flex-col md:flex-row gap-3 mb-8 bg-gray-50 p-5 rounded-2xl border border-gray-200 items-stretch">
-                        <input type="text" id="new-admin-name" placeholder="管理員姓名/備註 (選填)" class="px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-purple-500 font-bold w-full md:w-48 shrink-0">
-                        <input type="email" id="new-admin-email" placeholder="輸入要授權的 Google 帳號 (Email)" class="flex-grow px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-purple-500 font-bold w-full md:w-auto">
-                        <select id="new-admin-scope-type" onchange="window.toggleAdminScopeUI()" class="px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-purple-500 font-bold bg-white cursor-pointer w-full md:w-auto shrink-0">
+                    <div
+                        class="flex flex-col md:flex-row gap-3 mb-8 bg-gray-50 p-5 rounded-2xl border border-gray-200 items-stretch">
+                        <input type="text" id="new-admin-name" placeholder="管理員姓名/備註 (選填)"
+                            class="px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-purple-500 font-bold w-full md:w-48 shrink-0">
+                        <input type="email" id="new-admin-email" placeholder="輸入要授權的 Google 帳號 (Email)"
+                            class="flex-grow px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-purple-500 font-bold w-full md:w-auto">
+                        <select id="new-admin-scope-type" onchange="window.toggleAdminScopeUI()"
+                            class="px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-purple-500 font-bold bg-white cursor-pointer w-full md:w-auto shrink-0">
                             <option value="global">全站管理員</option>
                             <option value="city">特定單位管理員</option>
                             <option value="tournament">特定賽事管理員</option>
                         </select>
-                        <select id="new-admin-scope-value" class="hidden px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-purple-500 font-bold bg-white cursor-pointer w-full md:w-auto shrink-0 max-w-[250px]"></select>
-                        <button type="button" id="btn-submit-admin" onclick="window.addAdmin()" class="bg-purple-600 text-white px-8 py-3 rounded-xl font-black shadow-md hover:bg-purple-700 transition-colors whitespace-nowrap shrink-0">
+                        <select id="new-admin-scope-value"
+                            class="hidden px-4 py-3 border border-gray-200 rounded-xl outline-none focus:border-purple-500 font-bold bg-white cursor-pointer w-full md:w-auto shrink-0 max-w-[250px]"></select>
+                        <button type="button" id="btn-submit-admin" onclick="window.addAdmin()"
+                            class="bg-purple-600 text-white px-8 py-3 rounded-xl font-black shadow-md hover:bg-purple-700 transition-colors whitespace-nowrap shrink-0">
                             <i class="fas fa-plus mr-1"></i> 新增權限
                         </button>
                     </div>
@@ -719,53 +1026,61 @@
         </section>
 
         <section id="page-summary" class="page-section w-full max-w-4xl px-2 py-6 sm:py-10 mx-auto">
-            <div class="bg-white rounded-[2rem] shadow-xl border border-gray-100 overflow-hidden relative p-6 sm:p-12 min-h-[500px]">
-                
-                <div class="flex flex-col sm:flex-row justify-between items-center mb-6 border-b border-gray-200 pb-4 gap-4 no-print">
-                    <button onclick="window.backFromSummary()" class="text-gray-500 hover:text-tkdBlue font-bold transition-colors w-full sm:w-auto text-left flex items-center bg-gray-50 px-4 py-2 rounded-xl">
+            <div
+                class="bg-white rounded-[2rem] shadow-xl border border-gray-100 overflow-hidden relative p-6 sm:p-12 min-h-[500px]">
+
+                <div
+                    class="flex flex-col sm:flex-row justify-between items-center mb-6 border-b border-gray-200 pb-4 gap-4 no-print">
+                    <button onclick="window.backFromSummary()"
+                        class="text-gray-500 hover:text-tkdBlue font-bold transition-colors w-full sm:w-auto text-left flex items-center bg-gray-50 px-4 py-2 rounded-xl">
                         <i class="fas fa-arrow-left mr-2"></i> <span data-i18n="summary.back">返回上一頁</span>
                     </button>
-                    <button onclick="window.print()" class="bg-tkdBlue text-white px-8 py-3 rounded-xl font-black hover:bg-blue-700 transition-colors shadow-md flex items-center justify-center w-full sm:w-auto active:scale-[0.98]">
+                    <button onclick="window.print()"
+                        class="bg-tkdBlue text-white px-8 py-3 rounded-xl font-black hover:bg-blue-700 transition-colors shadow-md flex items-center justify-center w-full sm:w-auto active:scale-[0.98]">
                         <i class="fas fa-print mr-2"></i> <span data-i18n="summary.print">列印此表 (或存成 PDF)</span>
                     </button>
                 </div>
-                
+
                 <div id="summary-content" class="text-black bg-white"></div>
             </div>
         </section>
     </main>
 
     <footer class="bg-tkdDark pt-3 pb-5 mt-auto border-t border-white/10 shrink-0 w-full relative z-20">
-    
+
         <div id="footer-sponsor-section" class="w-full px-4 sm:px-8 lg:px-12 mb-2 border-b border-white/10 pb-3">
             <div class="flex items-center justify-center gap-3 mb-3">
-                <div class="h-px bg-white/10 flex-grow max-w-[60px] sm:max-w-[100px]"></div>                
+                <div class="h-px bg-white/10 flex-grow max-w-[60px] sm:max-w-[100px]"></div>
                 <div class="flex items-center gap-2">
-                    <p class="text-center text-xs sm:text-sm font-black tracking-widest text-gray-300 m-0">韻動國際-Daedo台灣總代理</p>
-                    <button onclick="window.toggleLineModal()" class="flex items-center bg-[#06C755]/10 hover:bg-[#06C755]/20 text-[#06C755] border border-[#06C755]/30 px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold transition-all shadow-sm active:scale-95 whitespace-nowrap">
+                    <p class="text-center text-xs sm:text-sm font-black tracking-widest text-gray-300 m-0">
+                        韻動國際-Daedo台灣總代理</p>
+                    <button onclick="window.toggleLineModal()"
+                        class="flex items-center bg-[#06C755]/10 hover:bg-[#06C755]/20 text-[#06C755] border border-[#06C755]/30 px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold transition-all shadow-sm active:scale-95 whitespace-nowrap">
                         <i class="fab fa-line mr-1 text-sm"></i>洽詢客服
                     </button>
                 </div>
                 <div class="h-px bg-white/10 flex-grow max-w-[60px] sm:max-w-[100px]"></div>
             </div>
-            
+
             <div class="relative w-full flex items-center group/arrow">
-                
-                <button onclick="window.moveCarousel('prev')" class="absolute left-2 sm:left-0 z-30 bg-black/60 sm:bg-black/50 sm:hover:bg-tkdBlue/90 text-white w-9 h-9 rounded-full flex items-center justify-center border border-white/10 transition-all shadow-md sm:shadow-xl backdrop-blur-sm active:scale-90 sm:-translate-x-2 sm:group-hover/arrow:translate-x-2">
+
+                <button onclick="window.moveCarousel('prev')"
+                    class="absolute left-2 sm:left-0 z-30 bg-black/60 sm:bg-black/50 sm:hover:bg-tkdBlue/90 text-white w-9 h-9 rounded-full flex items-center justify-center border border-white/10 transition-all shadow-md sm:shadow-xl backdrop-blur-sm active:scale-90 sm:-translate-x-2 sm:group-hover/arrow:translate-x-2">
                     <i class="fas fa-chevron-left text-sm"></i>
                 </button>
 
                 <div class="w-full overflow-hidden mx-1">
                     <div id="carousel-track" class="flex gap-4" style="transform: translateX(0px);">
-                        </div>
+                    </div>
                 </div>
 
-                <button onclick="window.moveCarousel('next')" class="absolute right-2 sm:right-0 z-30 bg-black/60 sm:bg-black/50 sm:hover:bg-tkdBlue/90 text-white w-9 h-9 rounded-full flex items-center justify-center border border-white/10 transition-all shadow-md sm:shadow-xl backdrop-blur-sm active:scale-90 sm:translate-x-2 sm:group-hover/arrow:-translate-x-2">
+                <button onclick="window.moveCarousel('next')"
+                    class="absolute right-2 sm:right-0 z-30 bg-black/60 sm:bg-black/50 sm:hover:bg-tkdBlue/90 text-white w-9 h-9 rounded-full flex items-center justify-center border border-white/10 transition-all shadow-md sm:shadow-xl backdrop-blur-sm active:scale-90 sm:translate-x-2 sm:group-hover/arrow:-translate-x-2">
                     <i class="fas fa-chevron-right text-sm"></i>
                 </button>
-                
+
             </div>
-        </div> 
+        </div>
         <div class="w-full px-4 sm:px-8 lg:px-12 flex flex-col lg:flex-row justify-between items-center gap-4">
             <div class="flex Flex-col items-center lg:items-start text-center lg:text-left w-full lg:w-auto">
                 <p class="text-[11px] lg:text-xs font-bold text-gray-500 tracking-wider leading-relaxed m-0">
@@ -776,101 +1091,133 @@
                     </span>
                 </p>
             </div>
-    
-            <div class="flex flex-wrap justify-center items-center gap-4 lg:gap-6 text-xs lg:text-sm font-bold w-full lg:w-auto text-gray-300">
-                 <button onclick="window.navigate('home')" class="hover:text-white transition-colors">回到首頁</button>
-                 <button onclick="window.togglePrivacyModal()" class="hover:text-white transition-colors">隱私權保護政策</button>
-                 
-                 <a href="https://www.wego-sporting.com/" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors flex items-center">
-                     <i class="fas fa-shopping-cart mr-1.5"></i> 韻動商店
-                 </a>
-                 
-                 <button onclick="window.toggleLineModal()" class="flex items-center bg-white/5 hover:bg-white/10 px-3 py-1.5 lg:px-4 lg:py-2 rounded-xl transition-all text-white shadow-sm border border-white/10 active:scale-95">
-                     <i class="fab fa-line text-[#06C755] mr-1.5 text-base"></i> 客服中心
-                 </button>
+
+            <div
+                class="flex flex-wrap justify-center items-center gap-4 lg:gap-6 text-xs lg:text-sm font-bold w-full lg:w-auto text-gray-300">
+                <button onclick="window.navigate('home')" class="hover:text-white transition-colors">回到首頁</button>
+                <button onclick="window.togglePrivacyModal()"
+                    class="hover:text-white transition-colors">隱私權保護政策</button>
+
+                <a href="https://www.wego-sporting.com/" target="_blank" rel="noopener noreferrer"
+                    class="hover:text-white transition-colors flex items-center">
+                    <i class="fas fa-shopping-cart mr-1.5"></i> 韻動商店
+                </a>
+
+                <button onclick="window.toggleLineModal()"
+                    class="flex items-center bg-white/5 hover:bg-white/10 px-3 py-1.5 lg:px-4 lg:py-2 rounded-xl transition-all text-white shadow-sm border border-white/10 active:scale-95">
+                    <i class="fab fa-line text-[#06C755] mr-1.5 text-base"></i> 客服中心
+                </button>
             </div>
         </div>
     </footer>
 
-    <div id="loginModal" class="hidden fixed inset-0 bg-gray-900/60 items-center justify-center z-[100] px-4 backdrop-blur-sm transition-opacity">
-        <div class="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full transform scale-95 transition-transform duration-300">
-            <div class="w-16 h-16 bg-blue-50 text-tkdBlue rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-lock"></i></div>
+    <div id="loginModal"
+        class="hidden fixed inset-0 bg-gray-900/60 items-center justify-center z-[100] px-4 backdrop-blur-sm transition-opacity">
+        <div
+            class="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full transform scale-95 transition-transform duration-300">
+            <div
+                class="w-16 h-16 bg-blue-50 text-tkdBlue rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                <i class="fas fa-lock"></i></div>
             <h3 class="font-black text-xl text-gray-800 mb-2" data-i18n="login.modal-title">需要登入帳號</h3>
             <p class="text-sm text-gray-500 font-bold mb-8" data-i18n="login.modal-desc">為了保護您的報名資料，請先登入系統後再繼續操作。</p>
             <div class="flex gap-3">
-                <button onclick="window.closeLoginModal(); window.clearHomeFilterAndNavigate()" class="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors" data-i18n="login.modal-btn-browse">先逛逛</button>
-                <button onclick="window.proceedToLogin()" class="flex-1 bg-tkdBlue text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors shadow-sm" data-i18n="login.modal-btn-login">前往登入</button>
+                <button onclick="window.closeLoginModal(); window.clearHomeFilterAndNavigate()"
+                    class="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors"
+                    data-i18n="login.modal-btn-browse">先逛逛</button>
+                <button onclick="window.proceedToLogin()"
+                    class="flex-1 bg-tkdBlue text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
+                    data-i18n="login.modal-btn-login">前往登入</button>
             </div>
         </div>
     </div>
 
-    <div id="deleteModal" class="hidden fixed inset-0 bg-gray-900/60 items-center justify-center z-[100] px-4 backdrop-blur-sm transition-opacity">
-        <div class="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full transform scale-95 transition-transform duration-300">
-            <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl"><i class="fas fa-trash-alt"></i></div>
+    <div id="deleteModal"
+        class="hidden fixed inset-0 bg-gray-900/60 items-center justify-center z-[100] px-4 backdrop-blur-sm transition-opacity">
+        <div
+            class="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full transform scale-95 transition-transform duration-300">
+            <div
+                class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                <i class="fas fa-trash-alt"></i></div>
             <h3 class="font-black text-xl text-gray-800 mb-2" data-i18n="modal.delete-title">確認刪除</h3>
             <p class="text-sm text-gray-500 font-bold mb-8" data-i18n="modal.delete-desc">此動作無法復原，您確定要刪除這筆報名資料嗎？</p>
             <div class="flex gap-3">
-                <button onclick="window.closeDeleteModal()" class="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors" data-i18n="modal.btn-cancel">取消</button>
-                <button id="btnConfirmDelete" class="flex-1 bg-red-600 text-white font-bold py-3 rounded-xl hover:bg-red-700 transition-colors shadow-sm" data-i18n="modal.btn-confirm-delete">確定刪除</button>
+                <button onclick="window.closeDeleteModal()"
+                    class="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors"
+                    data-i18n="modal.btn-cancel">取消</button>
+                <button id="btnConfirmDelete"
+                    class="flex-1 bg-red-600 text-white font-bold py-3 rounded-xl hover:bg-red-700 transition-colors shadow-sm"
+                    data-i18n="modal.btn-confirm-delete">確定刪除</button>
             </div>
         </div>
     </div>
 
-    <div id="lineModal" class="hidden fixed inset-0 bg-gray-900/60 items-center justify-center z-[100] px-4 backdrop-blur-sm transition-opacity">
-        <div class="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full transform scale-95 transition-transform duration-300 relative">
-            <button onclick="window.toggleLineModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-200 transition-colors">
+    <div id="lineModal"
+        class="hidden fixed inset-0 bg-gray-900/60 items-center justify-center z-[100] px-4 backdrop-blur-sm transition-opacity">
+        <div
+            class="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full transform scale-95 transition-transform duration-300 relative">
+            <button onclick="window.toggleLineModal()"
+                class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-200 transition-colors">
                 <i class="fas fa-times"></i>
             </button>
-            
-            <div class="w-16 h-16 bg-green-50 text-[#06C755] rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner">
+
+            <div
+                class="w-16 h-16 bg-green-50 text-[#06C755] rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner">
                 <i class="fab fa-line"></i>
             </div>
             <h3 class="font-black text-xl text-gray-800 mb-2">LINE 官方客服</h3>
             <p class="text-sm text-gray-500 font-bold mb-6">掃描下方 QR Code，或直接點擊按鈕加入好友，我們將盡快為您服務！</p>
-            
+
             <div class="bg-gray-50 p-4 rounded-2xl mb-6 inline-block border border-gray-100 shadow-sm">
-                <img src="./line_qr.png" alt="LINE 客服 QR Code" class="w-48 h-48 object-contain mx-auto mix-blend-multiply">
+                <img src="./line_qr.png" alt="LINE 客服 QR Code"
+                    class="w-48 h-48 object-contain mx-auto mix-blend-multiply">
             </div>
-            
+
             <div class="flex gap-3">
-                <a href="https://lin.ee/SneH8br" target="_blank" class="w-full bg-[#06C755] text-white font-black py-3.5 rounded-xl hover:bg-[#05b34c] transition-colors shadow-md flex items-center justify-center gap-2 active:scale-95">
+                <a href="https://lin.ee/SneH8br" target="_blank"
+                    class="w-full bg-[#06C755] text-white font-black py-3.5 rounded-xl hover:bg-[#05b34c] transition-colors shadow-md flex items-center justify-center gap-2 active:scale-95">
                     <i class="fas fa-external-link-alt"></i> 直接開啟 LINE 應用程式
                 </a>
             </div>
         </div>
     </div>
 
-    <div id="privacyModal" class="hidden fixed inset-0 bg-gray-900/60 items-center justify-center z-[100] px-4 backdrop-blur-sm transition-opacity">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl transform scale-95 transition-transform duration-300 flex flex-col max-h-[85vh] overflow-hidden">
-            
+    <div id="privacyModal"
+        class="hidden fixed inset-0 bg-gray-900/60 items-center justify-center z-[100] px-4 backdrop-blur-sm transition-opacity">
+        <div
+            class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl transform scale-95 transition-transform duration-300 flex flex-col max-h-[85vh] overflow-hidden">
+
             <div class="bg-gray-50 p-6 border-b border-gray-100 flex justify-between items-center shrink-0">
-                <h3 class="font-black text-xl text-gray-800 flex items-center"><i class="fas fa-user-shield text-tkdBlue mr-3 text-2xl"></i> 隱私權保護政策</h3>
-                <button onclick="window.togglePrivacyModal()" class="text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-gray-200 transition-colors shadow-sm">
+                <h3 class="font-black text-xl text-gray-800 flex items-center"><i
+                        class="fas fa-user-shield text-tkdBlue mr-3 text-2xl"></i> 隱私權保護政策</h3>
+                <button onclick="window.togglePrivacyModal()"
+                    class="text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-gray-200 transition-colors shadow-sm">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            
-            <div class="p-6 sm:p-8 overflow-y-auto text-sm text-gray-600 leading-loose font-medium space-y-6 bg-white custom-scrollbar">
+
+            <div
+                class="p-6 sm:p-8 overflow-y-auto text-sm text-gray-600 leading-loose font-medium space-y-6 bg-white custom-scrollbar">
                 <div>
                     <h4 class="font-black text-gray-800 text-base mb-2">一、隱私權保護政策的適用範圍</h4>
                     <p class="mb-4">本政策內容涵蓋本網站如何處理您在參與賽事報名、使用各項服務時所收集到的個人識別資料。此政策不適用於本網站以外的連結網站，亦不適用於非本網站委託或參與管理的人員。</p>
-                
+
                     <h4 class="font-black text-gray-800 text-base mb-2">二、個人資料的收集、處理及利用方式</h4>
                     <ul class="list-disc pl-5 mb-4 space-y-2">
                         <li>當您進行賽事報名時，我們將視賽事需求請您提供選手姓名、出生年月日、身分證字號、聯絡電話及教練資訊等必要個人資料。</li>
                         <li>您的個人資料僅會用於賽事身分確認、分組作業、保險辦理、賽程編排及獲獎通知等與競賽直接相關之目的。</li>
                         <li>除非取得您的同意或法律另有規定，本網站絕不會將您的個人資料用於上述目的以外之用途。</li>
                     </ul>
-                
+
                     <h4 class="font-black text-gray-800 text-base mb-2">三、資料之保護</h4>
                     <ul class="list-disc pl-5 mb-4 space-y-2">
                         <li>本網站主機均設有防火牆、防毒系統等相關資訊安全設備及必要的安全防護措施，以保護您的個人資料。</li>
                         <li>只有經過授權的人員才能接觸您的個人資料。</li>
                     </ul>
-                
+
                     <h4 class="font-black text-gray-800 text-base mb-2">四、網站對外的相關連結</h4>
-                    <p class="mb-4">本網站的網頁可能提供其他網站的網路連結，您可經由本網站所提供的連結點選進入其他網站。但該連結網站不適用本網站的隱私權保護政策，您必須參考該連結網站中的隱私權保護政策。</p>
-                
+                    <p class="mb-4">本網站的網頁可能提供其他網站的網路連結，您可經由本網站所提供的連結點選進入其他網站。但該連結網站不適用本網站的隱私權保護政策，您必須參考該連結網站中的隱私權保護政策。
+                    </p>
+
                     <h4 class="font-black text-gray-800 text-base mb-2">五、與第三人共用個人資料之政策</h4>
                     <p class="mb-4">本網站絕不會提供、交換、出租或出售任何您的個人資料給其他個人、團體、私人企業或公務機關，但有法律依據或合約義務者，不在此限。前述但書情況包括但不限於：</p>
                     <ul class="list-disc pl-5 mb-4 space-y-2">
@@ -879,56 +1226,73 @@
                         <li>為免除您生命、身體、自由或財產上之危險。</li>
                         <li>與公務機關或學術研究機構合作，基於公共利益為統計或學術研究而有必要，且資料經過提供者處理後，無從識別特定之當事人。</li>
                     </ul>
-                
+
                     <h4 class="font-black text-gray-800 text-base mb-2">六、Cookie 之使用</h4>
-                    <p class="mb-4">為了提供您最佳的服務，本網站會在您的電腦中放置並取用我們的 Cookie，以維持登入狀態及暫存報名進度。若您不願接受 Cookie 的寫入，可在您使用的瀏覽器功能項中設定隱私權等級為高，即可拒絕 Cookie 的寫入，但可能會導至網站某些功能（如登入系統）無法正常執行。</p>
-                
+                    <p class="mb-4">為了提供您最佳的服務，本網站會在您的電腦中放置並取用我們的 Cookie，以維持登入狀態及暫存報名進度。若您不願接受 Cookie
+                        的寫入，可在您使用的瀏覽器功能項中設定隱私權等級為高，即可拒絕 Cookie 的寫入，但可能會導至網站某些功能（如登入系統）無法正常執行。</p>
+
                     <h4 class="font-black text-gray-800 text-base mb-2">七、隱私權保護政策之修正</h4>
                     <p>本網站隱私權保護政策將因應需求隨時進行修正，修正後的條款將刊登於網站上。</p>
                 </div>
-                </div>
-            
+            </div>
+
             <div class="p-6 border-t border-gray-100 bg-gray-50 shrink-0">
-                <button onclick="window.agreePrivacyAndClose()" class="w-full bg-tkdBlue text-white font-black py-3.5 rounded-xl hover:bg-blue-700 transition-colors shadow-md active:scale-[0.98]" data-i18n="info.consent-agree">
+                <button onclick="window.agreePrivacyAndClose()"
+                    class="w-full bg-tkdBlue text-white font-black py-3.5 rounded-xl hover:bg-blue-700 transition-colors shadow-md active:scale-[0.98]"
+                    data-i18n="info.consent-agree">
                     我已詳細閱讀並同意上述條款
                 </button>
             </div>
         </div>
     </div>
 
-    <div id="customConfirmModal" class="hidden fixed inset-0 bg-gray-900/60 items-center justify-center z-[200] px-4 backdrop-blur-sm transition-opacity">
-        <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full transform scale-95 transition-transform duration-300 relative flex flex-col">
-            <div class="w-16 h-16 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner">
+    <div id="customConfirmModal"
+        class="hidden fixed inset-0 bg-gray-900/60 items-center justify-center z-[300] px-4 backdrop-blur-sm transition-opacity">
+        <div
+            class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full transform scale-95 transition-transform duration-300 relative flex flex-col">
+            <div
+                class="w-16 h-16 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner">
                 <i class="fas fa-exclamation-triangle"></i>
             </div>
             <h3 id="customConfirmTitle" class="font-black text-xl text-gray-800 mb-4 text-center">確認</h3>
-            <div id="customConfirmMessage" class="text-sm text-gray-600 font-bold mb-8 leading-relaxed text-center"></div>
+            <div id="customConfirmMessage" class="text-sm text-gray-600 font-bold mb-8 leading-relaxed text-center">
+            </div>
             <div class="flex gap-3 mt-auto">
-                <button id="btnCustomConfirmCancel" class="flex-1 bg-gray-100 text-gray-600 font-bold py-3.5 rounded-xl hover:bg-gray-200 transition-colors">取消</button>
-                <button id="btnCustomConfirmOk" class="flex-1 bg-orange-500 text-white font-black py-3.5 rounded-xl hover:bg-orange-600 transition-colors shadow-md active:scale-95">確定</button>
+                <button id="btnCustomConfirmCancel"
+                    class="flex-1 bg-gray-100 text-gray-600 font-bold py-3.5 rounded-xl hover:bg-gray-200 transition-colors">取消</button>
+                <button id="btnCustomConfirmOk"
+                    class="flex-1 bg-orange-500 text-white font-black py-3.5 rounded-xl hover:bg-orange-600 transition-colors shadow-md active:scale-95">確定</button>
             </div>
         </div>
     </div>
 
-    <div id="historyAutofillModal" class="hidden fixed inset-0 bg-gray-900/60 items-center justify-center z-[200] px-4 backdrop-blur-sm transition-opacity">
-        <div class="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl max-w-md w-full transform scale-95 transition-transform duration-300 flex flex-col max-h-[85vh]">
+    <div id="historyAutofillModal"
+        class="hidden fixed inset-0 bg-gray-900/60 items-center justify-center z-[200] px-4 backdrop-blur-sm transition-opacity">
+        <div
+            class="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl max-w-md w-full transform scale-95 transition-transform duration-300 flex flex-col max-h-[85vh]">
             <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-4 shrink-0">
-                <h3 class="font-black text-lg text-gray-800 flex items-center"><i class="fas fa-history text-tkdBlue mr-2"></i> 選擇歷史隊職員資料</h3>
-                <button onclick="window.closeHistoryAutofillModal()" class="text-gray-400 hover:text-gray-600 w-8 h-8 rounded-full bg-gray-50 hover:bg-gray-200 flex items-center justify-center transition-colors"><i class="fas fa-times"></i></button>
+                <h3 class="font-black text-lg text-gray-800 flex items-center"><i
+                        class="fas fa-history text-tkdBlue mr-2"></i> 選擇歷史隊職員資料</h3>
+                <button onclick="window.closeHistoryAutofillModal()"
+                    class="text-gray-400 hover:text-gray-600 w-8 h-8 rounded-full bg-gray-50 hover:bg-gray-200 flex items-center justify-center transition-colors"><i
+                        class="fas fa-times"></i></button>
             </div>
             <div class="text-xs text-gray-500 font-bold mb-4 shrink-0">系統已為您整理出該帳號曾使用過的單位紀錄，點擊即可一鍵帶入表單。</div>
             <div id="historyAutofillList" class="overflow-y-auto flex-grow space-y-3 pr-2 custom-scrollbar"></div>
-            
+
             <!-- 下方按鈕區塊 -->
             <div class="mt-5 pt-4 border-t border-gray-100 shrink-0 flex flex-col gap-3">
-                <button onclick="window.closeHistoryAutofillModal(); window.openTeamProfileModal();" class="w-full bg-blue-50 text-tkdBlue border border-blue-100 font-black py-3.5 rounded-xl hover:bg-blue-100 transition-colors shadow-sm flex items-center justify-center active:scale-95">
+                <button onclick="window.closeHistoryAutofillModal(); window.openTeamProfileModal();"
+                    class="w-full bg-blue-50 text-tkdBlue border border-blue-100 font-black py-3.5 rounded-xl hover:bg-blue-100 transition-colors shadow-sm flex items-center justify-center active:scale-95">
                     <i class="fas fa-plus mr-2"></i> 建立新的常用名單
                 </button>
                 <div class="flex gap-3">
-                    <button onclick="window.navigateToManageProfiles()" class="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors text-sm active:scale-95 flex items-center justify-center">
+                    <button onclick="window.navigateToManageProfiles()"
+                        class="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors text-sm active:scale-95 flex items-center justify-center">
                         <i class="fas fa-cog mr-1.5"></i> 管理名單
                     </button>
-                    <button onclick="window.closeHistoryAutofillModal()" class="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors text-sm active:scale-95 flex items-center justify-center">
+                    <button onclick="window.closeHistoryAutofillModal()"
+                        class="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors text-sm active:scale-95 flex items-center justify-center">
                         <i class="fas fa-pen mr-1.5"></i> 手動填寫本單
                     </button>
                 </div>
@@ -936,66 +1300,89 @@
         </div>
     </div>
 
-    <div id="itemDetailModal" class="hidden fixed inset-0 bg-gray-900/60 items-center justify-center z-[200] px-4 backdrop-blur-sm transition-opacity">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl transform scale-95 transition-transform duration-300 flex flex-col max-h-[85vh] overflow-hidden">
+    <div id="itemDetailModal"
+        class="hidden fixed inset-0 bg-gray-900/60 items-center justify-center z-[200] px-4 backdrop-blur-sm transition-opacity">
+        <div
+            class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl transform scale-95 transition-transform duration-300 flex flex-col max-h-[85vh] overflow-hidden">
             <div class="bg-gray-50 p-6 border-b border-gray-100 flex justify-between items-center shrink-0">
                 <h3 id="modal-item-title" class="font-black text-xl text-gray-800 flex items-center">
                     <i class="fas fa-chart-bar text-tkdBlue mr-3 text-2xl"></i> 項目細分統計
                 </h3>
-                <button onclick="window.closeItemDetailModal()" class="text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-gray-200 transition-colors shadow-sm">
+                <button onclick="window.closeItemDetailModal()"
+                    class="text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-gray-200 transition-colors shadow-sm">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div id="modal-item-body" class="p-6 overflow-y-auto custom-scrollbar bg-white"></div>
             <div class="p-6 border-t border-gray-100 bg-gray-50 shrink-0 text-right">
-                <button onclick="window.closeItemDetailModal()" class="bg-gray-800 text-white font-black px-8 py-3 rounded-xl hover:bg-black transition-colors shadow-md">
+                <button onclick="window.closeItemDetailModal()"
+                    class="bg-gray-800 text-white font-black px-8 py-3 rounded-xl hover:bg-black transition-colors shadow-md">
                     關閉視窗
                 </button>
             </div>
         </div>
     </div>
 
-    <div id="consentAlertModal" class="hidden fixed inset-0 bg-gray-900/60 items-center justify-center z-[200] px-4 backdrop-blur-sm transition-opacity">
-        <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full transform scale-95 transition-transform duration-300 relative flex flex-col">
-            <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner">
+    <div id="consentAlertModal"
+        class="hidden fixed inset-0 bg-gray-900/60 items-center justify-center z-[200] px-4 backdrop-blur-sm transition-opacity">
+        <div
+            class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full transform scale-95 transition-transform duration-300 relative flex flex-col">
+            <div
+                class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner">
                 <i class="fas fa-exclamation-circle"></i>
             </div>
             <h3 class="font-black text-xl text-gray-800 mb-4 text-center" data-i18n="msg.alert-title">系統提示</h3>
-            <div class="text-sm text-gray-600 font-bold mb-8 leading-relaxed text-center" data-i18n="msg.privacy-alert"></div>
-            <button onclick="window.toggleConsentAlertModal(false)" class="w-full bg-tkdBlue text-white font-black py-3.5 rounded-xl hover:bg-blue-700 transition-colors shadow-md active:scale-95" data-i18n="msg.privacy-btn">
+            <div class="text-sm text-gray-600 font-bold mb-8 leading-relaxed text-center" data-i18n="msg.privacy-alert">
+            </div>
+            <button onclick="window.toggleConsentAlertModal(false)"
+                class="w-full bg-tkdBlue text-white font-black py-3.5 rounded-xl hover:bg-blue-700 transition-colors shadow-md active:scale-95"
+                data-i18n="msg.privacy-btn">
                 我知道了
             </button>
         </div>
     </div>
 
-    <div id="sessionConflictModal" class="hidden fixed inset-0 bg-gray-900/80 items-center justify-center z-[300] px-4 backdrop-blur-md transition-opacity">
-        <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full transform scale-95 transition-transform duration-300 relative flex flex-col">
-            <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner">
+    <div id="sessionConflictModal"
+        class="hidden fixed inset-0 bg-gray-900/80 items-center justify-center z-[300] px-4 backdrop-blur-md transition-opacity">
+        <div
+            class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full transform scale-95 transition-transform duration-300 relative flex flex-col">
+            <div
+                class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner">
                 <i class="fas fa-sign-out-alt"></i>
             </div>
             <h3 class="font-black text-xl text-gray-800 mb-4 text-center">強制登出通知</h3>
             <div class="text-sm text-gray-600 font-bold mb-8 leading-relaxed text-center">
                 您的帳號已在其他設備或視窗登入，基於安全考量，目前設備將被強制登出。
             </div>
-            <button onclick="window.logout()" class="w-full bg-red-600 text-white font-black py-3.5 rounded-xl hover:bg-red-700 transition-colors shadow-md active:scale-95">
+            <button onclick="window.logout()"
+                class="w-full bg-red-600 text-white font-black py-3.5 rounded-xl hover:bg-red-700 transition-colors shadow-md active:scale-95">
                 我知道了
             </button>
         </div>
     </div>
 
-    <div id="teamProfileModal" class="hidden fixed inset-0 bg-gray-900/60 items-center justify-center z-[200] px-4 backdrop-blur-sm transition-opacity">
-        <div class="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl max-w-lg w-full transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh]">
+    <div id="teamProfileModal"
+        class="hidden fixed inset-0 bg-gray-900/60 items-center justify-center z-[200] px-4 backdrop-blur-sm transition-opacity">
+        <div
+            class="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl max-w-lg w-full transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh]">
             <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-4 shrink-0">
-                <h3 id="teamProfileModalTitle" class="font-black text-lg text-gray-800 flex items-center"><i class="fas fa-address-book text-tkdBlue mr-2"></i> 新增常用名單</h3>
-                <button onclick="window.closeTeamProfileModal()" class="text-gray-400 hover:text-gray-600 w-8 h-8 rounded-full bg-gray-50 hover:bg-gray-200 flex items-center justify-center transition-colors"><i class="fas fa-times"></i></button>
+                <h3 id="teamProfileModalTitle" class="font-black text-lg text-gray-800 flex items-center"><i
+                        class="fas fa-address-book text-tkdBlue mr-2"></i> 新增常用名單</h3>
+                <button onclick="window.closeTeamProfileModal()"
+                    class="text-gray-400 hover:text-gray-600 w-8 h-8 rounded-full bg-gray-50 hover:bg-gray-200 flex items-center justify-center transition-colors"><i
+                        class="fas fa-times"></i></button>
             </div>
             <div class="overflow-y-auto flex-grow pr-2 custom-scrollbar">
                 <form id="teamProfileForm" class="space-y-4">
                     <input type="hidden" id="tp-id" value="">
-                    <div><label class="block text-xs font-bold text-gray-600 mb-1">參賽單位 <span class="text-red-500">*</span></label><input type="text" id="tp-unit" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-tkdBlue focus:ring-2 focus:ring-tkdBlue/20 outline-none font-bold"></div>
+                    <div><label class="block text-xs font-bold text-gray-600 mb-1">參賽單位 <span
+                                class="text-red-500">*</span></label><input type="text" id="tp-unit" required
+                            class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-tkdBlue focus:ring-2 focus:ring-tkdBlue/20 outline-none font-bold">
+                    </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-600 mb-1">分隊 (選填)</label>
-                        <select id="tp-subTeam" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-tkdBlue outline-none font-bold bg-white cursor-pointer">
+                        <select id="tp-subTeam"
+                            class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-tkdBlue outline-none font-bold bg-white cursor-pointer">
                             <option value="" selected></option>
                             <option value="A隊">A隊</option>
                             <option value="B隊">B隊</option>
@@ -1005,21 +1392,262 @@
                             <option value="F隊">F隊</option>
                         </select>
                     </div>
-                    <div><label class="block text-xs font-bold text-gray-600 mb-1">連絡電話 <span class="text-red-500">*</span></label><input type="tel" id="tp-phone" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-tkdBlue outline-none font-bold"></div>
-                    <div><label class="block text-xs font-bold text-gray-600 mb-1">領隊</label><input type="text" id="tp-leader" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-tkdBlue outline-none font-bold"></div>
-                    <div><label class="block text-xs font-bold text-gray-600 mb-1">管理</label><input type="text" id="tp-manager" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-tkdBlue outline-none font-bold"></div>
-                    <div><label class="block text-xs font-bold text-gray-600 mb-1">教練 1 <span class="text-red-500">*</span></label><input type="text" id="tp-coach1" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-tkdBlue outline-none font-bold"></div>
-                    <div><label class="block text-xs font-bold text-gray-600 mb-1">教練 2</label><input type="text" id="tp-coach2" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-tkdBlue outline-none font-bold"></div>
-                    <div><label class="block text-xs font-bold text-gray-600 mb-1">教練 3</label><input type="text" id="tp-coach3" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-tkdBlue outline-none font-bold"></div>
+                    <div><label class="block text-xs font-bold text-gray-600 mb-1">連絡電話 <span
+                                class="text-red-500">*</span></label><input type="tel" id="tp-phone" required
+                            class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-tkdBlue outline-none font-bold">
+                    </div>
+                    <div><label class="block text-xs font-bold text-gray-600 mb-1">領隊</label><input type="text"
+                            id="tp-leader"
+                            class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-tkdBlue outline-none font-bold">
+                    </div>
+                    <div><label class="block text-xs font-bold text-gray-600 mb-1">管理</label><input type="text"
+                            id="tp-manager"
+                            class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-tkdBlue outline-none font-bold">
+                    </div>
+                    <div><label class="block text-xs font-bold text-gray-600 mb-1">教練 1 <span
+                                class="text-red-500">*</span></label><input type="text" id="tp-coach1" required
+                            class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-tkdBlue outline-none font-bold">
+                    </div>
+                    <div><label class="block text-xs font-bold text-gray-600 mb-1">教練 2</label><input type="text"
+                            id="tp-coach2"
+                            class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-tkdBlue outline-none font-bold">
+                    </div>
+                    <div><label class="block text-xs font-bold text-gray-600 mb-1">教練 3</label><input type="text"
+                            id="tp-coach3"
+                            class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-tkdBlue outline-none font-bold">
+                    </div>
                 </form>
             </div>
             <div class="mt-5 pt-4 border-t border-gray-100 shrink-0 flex gap-3">
-                <button onclick="window.closeTeamProfileModal()" class="flex-1 bg-gray-100 text-gray-600 font-bold py-3.5 rounded-xl hover:bg-gray-200 transition-colors">取消</button>
-                <button onclick="window.saveTeamProfile()" class="flex-1 bg-tkdBlue text-white font-black py-3.5 rounded-xl hover:bg-blue-700 transition-colors shadow-md">儲存名單</button>
+                <button onclick="window.closeTeamProfileModal()"
+                    class="flex-1 bg-gray-100 text-gray-600 font-bold py-3.5 rounded-xl hover:bg-gray-200 transition-colors">取消</button>
+                <button onclick="window.saveTeamProfile()"
+                    class="flex-1 bg-tkdBlue text-white font-black py-3.5 rounded-xl hover:bg-blue-700 transition-colors shadow-md">儲存名單</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="uploadSummaryModal"
+        class="hidden fixed inset-0 bg-gray-900/60 items-center justify-center z-[200] px-4 backdrop-blur-sm transition-opacity">
+        <div
+            class="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl max-w-lg w-full transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-4 shrink-0">
+                <h3 class="font-black text-lg text-gray-800 flex items-center"><i
+                        class="fas fa-file-signature text-tkdBlue mr-2"></i> 上傳單位報名總表</h3>
+                <button onclick="window.closeUploadSummaryModal()"
+                    class="text-gray-400 hover:text-gray-600 w-8 h-8 rounded-full bg-gray-50 hover:bg-gray-200 flex items-center justify-center transition-colors"><i
+                        class="fas fa-times"></i></button>
+            </div>
+            <div class="overflow-y-auto flex-grow pr-2 custom-scrollbar space-y-5">
+                <div
+                    class="flex items-center justify-between bg-gray-50/80 px-4 py-2.5 rounded-xl border border-gray-100 gap-2">
+                    <span class="text-xs font-black text-gray-400 uppercase tracking-widest shrink-0">參賽單位</span>
+                    <div id="upload-summary-unit-display"
+                        class="font-black text-gray-800 text-sm sm:text-base text-right truncate"></div>
+                </div>
+
+                <!-- 簽名總表上傳區 -->
+                <div id="upload-summary-container"
+                    class="bg-gray-50 p-4 rounded-2xl border border-gray-100 transition-all duration-300">
+                    <label class="block text-sm font-bold text-gray-800 mb-1.5 flex items-center">
+                        <i class="fas fa-file-signature text-tkdBlue mr-2"></i> 簽名後的單位報名總表
+                    </label>
+                    <p class="text-[11px] text-gray-400 font-bold mb-3">請先點選「列印總表」，簽名/蓋章後拍照或掃描成 PDF/JPG 檔上傳</p>
+                    <input type="file" id="upload-summary-file" accept="image/*,application/pdf" class="hidden"
+                        onchange="window.handleUploadSubFile(this, 'summary')">
+
+                    <div id="upload-summary-preview-container"
+                        class="hidden flex justify-between items-center bg-white p-3 rounded-xl border border-gray-200 shadow-sm mb-3">
+                        <a id="upload-summary-preview-link" href="#" target="_blank"
+                            class="text-xs font-bold text-tkdBlue hover:underline truncate flex items-center gap-2"><i
+                                class="fas fa-file-alt"></i><span id="upload-summary-filename"></span></a>
+                        <button onclick="window.removeUploadSubFile('summary')"
+                            class="text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shrink-0"><i
+                                class="fas fa-trash-alt"></i> 刪除檔案</button>
+                    </div>
+
+                    <button onclick="document.getElementById('upload-summary-file').click()"
+                        class="w-full bg-white hover:bg-gray-100 border border-gray-200 hover:border-gray-300 py-3 rounded-xl font-bold text-sm text-gray-700 transition-all flex items-center justify-center gap-2">
+                        <i class="fas fa-cloud-upload-alt text-gray-400"></i> 選擇檔案上傳
+                    </button>
+                    <div id="upload-summary-progress" class="hidden mt-2 text-xs font-bold text-tkdBlue"><i
+                            class="fas fa-spinner fa-spin mr-1"></i> 上傳中... <span id="upload-summary-percent">0%</span>
+                    </div>
+                </div>
+
+                <!-- 審核狀態與回饋區 -->
+                <div id="upload-summary-feedback-container" class="hidden p-4 rounded-2xl border">
+                    <div class="flex items-center justify-between mb-2 gap-2">
+                        <span class="text-xs font-black uppercase tracking-widest text-gray-400 shrink-0">管理員審核回饋</span>
+                        <div id="upload-summary-feedback-status"
+                            class="inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-lg border shrink-0">
+                        </div>
+                    </div>
+                    <div id="upload-summary-feedback-notes"
+                        class="text-xs text-gray-600 font-bold whitespace-pre-wrap leading-relaxed"></div>
+                </div>
+            </div>
+            <div class="mt-5 pt-4 border-t border-gray-100 shrink-0 flex gap-3">
+                <button onclick="window.closeUploadSummaryModal()"
+                    class="flex-grow bg-gray-100 text-gray-600 font-bold py-3.5 rounded-xl hover:bg-gray-200 transition-colors">關閉</button>
+                <button id="btnSubmitUploadSummary" onclick="window.submitUploadSubmission('summary')"
+                    class="flex-grow bg-tkdBlue text-white font-black py-3.5 rounded-xl hover:bg-blue-700 transition-colors shadow-md flex items-center justify-center gap-2"><i
+                        class="fas fa-check"></i> 確認送出審核</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="uploadRemittanceModal"
+        class="hidden fixed inset-0 bg-gray-900/60 items-center justify-center z-[200] px-4 backdrop-blur-sm transition-opacity">
+        <div
+            class="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl max-w-lg w-full transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-4 shrink-0">
+                <h3 class="font-black text-lg text-gray-800 flex items-center"><i
+                        class="fas fa-receipt text-green-600 mr-2"></i> 上傳匯款紀錄證明</h3>
+                <button onclick="window.closeUploadRemittanceModal()"
+                    class="text-gray-400 hover:text-gray-600 w-8 h-8 rounded-full bg-gray-50 hover:bg-gray-200 flex items-center justify-center transition-colors"><i
+                        class="fas fa-times"></i></button>
+            </div>
+            <div class="overflow-y-auto flex-grow pr-2 custom-scrollbar space-y-5">
+                <div
+                    class="flex items-center justify-between bg-gray-50/80 px-4 py-2.5 rounded-xl border border-gray-100 gap-2">
+                    <span class="text-xs font-black text-gray-400 uppercase tracking-widest shrink-0">參賽單位</span>
+                    <div id="upload-remittance-unit-display"
+                        class="font-black text-gray-800 text-sm sm:text-base text-right truncate"></div>
+                </div>
+
+                <!-- 匯款紀錄上傳區 -->
+                <div id="upload-remittance-container"
+                    class="bg-gray-50 p-4 rounded-2xl border border-gray-100 transition-all duration-300">
+                    <label class="block text-sm font-bold text-gray-800 mb-1.5 flex items-center">
+                        <i class="fas fa-receipt text-green-600 mr-2"></i> 匯款紀錄證明
+                    </label>
+                    <p class="text-[11px] text-gray-400 font-bold mb-3">請上傳網銀轉帳截圖、ATM 明細表拍照或臨櫃匯款收據</p>
+                    <input type="file" id="upload-remittance-file" accept="image/*,application/pdf" class="hidden"
+                        onchange="window.handleUploadSubFile(this, 'remittance')">
+
+                    <div id="upload-remittance-preview-container"
+                        class="hidden flex justify-between items-center bg-white p-3 rounded-xl border border-gray-200 shadow-sm mb-3">
+                        <a id="upload-remittance-preview-link" href="#" target="_blank"
+                            class="text-xs font-bold text-green-600 hover:underline truncate flex items-center gap-2"><i
+                                class="fas fa-file-alt"></i><span id="upload-remittance-filename"></span></a>
+                        <button onclick="window.removeUploadSubFile('remittance')"
+                            class="text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 shrink-0"><i
+                                class="fas fa-trash-alt"></i> 刪除檔案</button>
+                    </div>
+
+                    <button onclick="document.getElementById('upload-remittance-file').click()"
+                        class="w-full bg-white hover:bg-gray-100 border border-gray-200 hover:border-gray-300 py-3 rounded-xl font-bold text-sm text-gray-700 transition-all flex items-center justify-center gap-2">
+                        <i class="fas fa-cloud-upload-alt text-gray-400"></i> 選擇檔案上傳
+                    </button>
+                    <div id="upload-remittance-progress" class="hidden mt-2 text-xs font-bold text-green-600"><i
+                            class="fas fa-spinner fa-spin mr-1"></i> 上傳中... <span
+                            id="upload-remittance-percent">0%</span></div>
+                </div>
+
+                <!-- 審核狀態與回饋區 -->
+                <div id="upload-remittance-feedback-container" class="hidden p-4 rounded-2xl border">
+                    <div class="flex items-center justify-between mb-2 gap-2">
+                        <span class="text-xs font-black uppercase tracking-widest text-gray-400 shrink-0">管理員審核回饋</span>
+                        <div id="upload-remittance-feedback-status"
+                            class="inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-lg border shrink-0">
+                        </div>
+                    </div>
+                    <div id="upload-remittance-feedback-notes"
+                        class="text-xs text-gray-600 font-bold whitespace-pre-wrap leading-relaxed"></div>
+                </div>
+            </div>
+            <div class="mt-5 pt-4 border-t border-gray-100 shrink-0 flex gap-3">
+                <button onclick="window.closeUploadRemittanceModal()"
+                    class="flex-grow bg-gray-100 text-gray-600 font-bold py-3.5 rounded-xl hover:bg-gray-200 transition-colors">關閉</button>
+                <button id="btnSubmitUploadRemittance" onclick="window.submitUploadSubmission('remittance')"
+                    class="flex-grow bg-green-600 text-white font-black py-3.5 rounded-xl hover:bg-green-700 transition-colors shadow-md flex items-center justify-center gap-2"><i
+                        class="fas fa-check"></i> 確認送出審核</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="reviewSubmissionModal"
+        class="hidden fixed inset-0 bg-gray-900/60 items-center justify-center z-[200] px-4 backdrop-blur-sm transition-opacity">
+        <div
+            class="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl max-w-lg w-full transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-4 shrink-0">
+                <h3 class="font-black text-lg text-gray-800 flex items-center"><i
+                        class="fas fa-clipboard-check text-tkdRed mr-2"></i> 審查單位總表與匯款</h3>
+                <button onclick="window.closeReviewSubmissionModal()"
+                    class="text-gray-400 hover:text-gray-600 w-8 h-8 rounded-full bg-gray-50 hover:bg-gray-200 flex items-center justify-center transition-colors"><i
+                        class="fas fa-times"></i></button>
+            </div>
+            <div class="overflow-y-auto flex-grow pr-2 custom-scrollbar space-y-4">
+                <div>
+                    <span class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">審查單位</span>
+                    <div id="review-sub-unit-display" class="font-black text-gray-800 text-base"></div>
+                    <div id="review-sub-email-display" class="text-xs text-gray-400 font-bold mt-1"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-gray-50 p-3.5 rounded-2xl border border-gray-100 flex flex-col justify-between">
+                        <span class="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-2"><i
+                                class="fas fa-file-signature text-tkdBlue mr-1"></i> 簽名總表</span>
+                        <div id="review-summary-link-container">
+                            <span class="text-xs text-gray-400 font-bold">未上傳</span>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 p-3.5 rounded-2xl border border-gray-100 flex flex-col justify-between">
+                        <span class="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-2"><i
+                                class="fas fa-receipt text-green-600 mr-1"></i> 匯款紀錄</span>
+                        <div id="review-remittance-link-container">
+                            <span class="text-xs text-gray-400 font-bold">未上傳</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-100 pt-4 space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1.5">審核狀態</label>
+                        <select id="review-status-select"
+                            class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-tkdBlue outline-none font-bold bg-white cursor-pointer">
+                            <option value="pending">待審核</option>
+                            <option value="verified">已確認 (已收款)</option>
+                            <option value="rejected">資料錯誤 / 退回</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-bold text-gray-600">審核備註 / 常見退件原因速選</label>
+                            <span class="text-[11px] text-gray-400">點擊下方按鈕自動填入並設為退回</span>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5 mb-2.5">
+                            <button type="button" onclick="window.insertPresetRejectReason('匯款金額與報名費總計不符')"
+                                class="text-[11px] bg-red-50 hover:bg-red-500 hover:text-white text-red-600 border border-red-200/60 font-bold px-2.5 py-1 rounded-lg transition-colors shadow-2xs">💵
+                                金額不符</button>
+                            <button type="button" onclick="window.insertPresetRejectReason('匯款證明影像模糊／無法識別帳號末五碼')"
+                                class="text-[11px] bg-red-50 hover:bg-red-500 hover:text-white text-red-600 border border-red-200/60 font-bold px-2.5 py-1 rounded-lg transition-colors shadow-2xs">📸
+                                證明模糊</button>
+                            <button type="button" onclick="window.insertPresetRejectReason('簽名報名總表缺少領隊或教練簽章')"
+                                class="text-[11px] bg-red-50 hover:bg-red-500 hover:text-white text-red-600 border border-red-200/60 font-bold px-2.5 py-1 rounded-lg transition-colors shadow-2xs">✍️
+                                總表缺蓋章</button>
+                            <button type="button" onclick="window.insertPresetRejectReason('上傳檔案無法正常開啟或格式錯誤')"
+                                class="text-[11px] bg-red-50 hover:bg-red-500 hover:text-white text-red-600 border border-red-200/60 font-bold px-2.5 py-1 rounded-lg transition-colors shadow-2xs">📁
+                                檔案異常</button>
+                        </div>
+                        <textarea id="review-notes-textarea" rows="3" placeholder="點擊上方按鈕速選或直接填寫補充說明..."
+                            class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:border-tkdBlue outline-none font-bold text-sm resize-none"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-5 pt-4 border-t border-gray-100 shrink-0 flex gap-3">
+                <button onclick="window.closeReviewSubmissionModal()"
+                    class="flex-grow bg-gray-100 text-gray-600 font-bold py-3.5 rounded-xl hover:bg-gray-200 transition-colors">取消</button>
+                <button onclick="window.saveReviewSubmission()"
+                    class="flex-grow bg-tkdRed text-white font-black py-3.5 rounded-xl hover:bg-red-700 transition-colors shadow-md flex items-center justify-center gap-2"><i
+                        class="fas fa-save"></i> 儲存審查結果</button>
             </div>
         </div>
     </div>
 
     <script type="module" src="./js/app.js"></script>
 </body>
+
 </html>

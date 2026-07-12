@@ -217,9 +217,50 @@ body {
        display: grid !important;
    }
 
-/* ==========================================
-   登入版面置中修復 (消除 active 與 flex 衝突)
-   ========================================== */
    #page-login:not(.hidden) {
     display: flex !important;
+}
+
+/* ==========================================
+   全站灰色字體清晰度與高對比優化 (提升可讀性)
+   ========================================== */
+/* 1. 淺色背景（白底卡片、灰底區塊、表格、表單欄位說明、Modal視窗）中的過淡淺灰字體自動加深為高清晰易讀鐵灰 (#4b5563) */
+.bg-white .text-gray-400,
+.bg-gray-50 .text-gray-400,
+.bg-gray-100 .text-gray-400,
+table .text-gray-400,
+label .text-gray-400,
+label.text-gray-400,
+div[id$="Modal"] .text-gray-400,
+p.text-gray-400,
+span.text-gray-400,
+h1.text-gray-400,
+h2.text-gray-400,
+h3.text-gray-400,
+h4.text-gray-400,
+div.text-gray-400 {
+    color: #4b5563 !important;
+}
+
+/* 2. 在淺色背景中的次要說明文字 (text-gray-500) 也適度加深為扎實易讀的深灰 (#374151) */
+.bg-white .text-gray-500,
+.bg-gray-50 .text-gray-500,
+table .text-gray-500 {
+    color: #374151 !important;
+}
+
+/* 3. 表單輸入框、選單與搜尋框的 Placeholder 顏色加深鮮明 */
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+    color: #6b7280 !important;
+    opacity: 1;
+}
+
+/* 4. 深色背景（導覽列、頁首 Header、深色按鈕、黑底卡片）中的淺灰文字自動提亮為明亮亮灰，確保在黑底上清晰可見 */
+.bg-gray-900 .text-gray-400,
+.bg-gray-800 .text-gray-400,
+header .text-gray-400,
+nav .text-gray-400 {
+    color: #e5e7eb !important;
 }

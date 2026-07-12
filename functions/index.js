@@ -5,6 +5,11 @@ admin.initializeApp();
 exports.setAdminClaims = functions.https.onCall(async (data, context) => {
     const superAdminEmail = 'chao82465@gmail.com';
     
+    // 0. 基礎登入驗證
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', '您必須先登入系統。');
+    }
+    
     // ✨ 防呆機制：防止 Firebase 把包裹多包一層，並改用 adminToken 避開關鍵字過濾
     const payload = data.data || data || {};
     const adminToken = payload.adminToken;
@@ -22,8 +27,8 @@ exports.setAdminClaims = functions.https.onCall(async (data, context) => {
         const decodedToken = await admin.auth().verifyIdToken(adminToken);
         const currentEmail = decodedToken.email;
 
-        // 3. 檢查是不是超級管理員
-        if (!currentEmail || currentEmail.toLowerCase() !== superAdminEmail) {
+        // 3. 檢查是不是超級管理員 (雙重校驗以確保安全性)
+        if (!currentEmail || currentEmail.toLowerCase() !== superAdminEmail || context.auth.token.email.toLowerCase() !== superAdminEmail) {
             throw new functions.https.HttpsError('permission-denied', `權限不足！這張身分證的信箱是：${currentEmail}`);
         }
 
@@ -48,8 +53,8 @@ exports.setAdminClaims = functions.https.onCall(async (data, context) => {
                 return { success: true, message: `該帳號已不在驗證系統中，將直接為您清理資料庫的殘留紀錄。` };
             } else {
                 throw new functions.https.HttpsError(
-                    'not-found', 
-                    '無法授權！該 Email 尚未登入過本系統。請先請對方使用 Google 帳號「登入系統一次」產生驗證資料後，再進行授權。'
+                     'not-found', 
+                     '無法授權！該 Email 尚未登入過本系統。請先請對方使用 Google 帳號「登入系統一次」產生驗證資料後，再進行授權。'
                 );
             }
         }
@@ -63,11 +68,174 @@ exports.setAdminClaims = functions.https.onCall(async (data, context) => {
 });
 
 // ==========================================
+// ✨ 核心升級：後端安全報名寫入與費率計算 (Callable Function)
+// ==========================================
+exports.saveRegistration = functions.https.onCall(async (data, context) => {
+    const superAdminEmail = 'chao82465@gmail.com';
+
+    // 1. 驗證登入狀態
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', '請先登入系統！');
+    }
+    
+    const callerUid = context.auth.uid;
+    const callerEmail = context.auth.token.email || '';
+    const db = admin.firestore();
+    
+    const payload = data.data || data || {};
+    const appId = payload.appId || 'wego-enroll-app';
+    const regId = payload.id; // 若有傳入 id，代表是修改/更新報名
+
+    // 2. 檢查使用者是否已被封鎖 (即時從資料庫比對)
+    const blockedDoc = await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('blockedUsers').doc(callerUid).get();
+    if (blockedDoc.exists || (context.auth.token && context.auth.token.blocked === true)) {
+        throw new functions.https.HttpsError('permission-denied', '您的帳號已被管理員停權封鎖，無法執行此操作！');
+    }
+
+    // 3. 角色與權限判斷
+    const isCallerSuperAdmin = callerEmail.toLowerCase() === superAdminEmail;
+    const isCallerAdmin = isCallerSuperAdmin || (context.auth.token.admin === true);
+    const isCallerScopedAdmin = context.auth.token.scopedAdmin != null;
+    const scopedAdminData = context.auth.token.scopedAdmin; // { type: 'tournament'|'city', value: string }
+
+    const isWithinScope = (docData) => {
+        if (!isCallerScopedAdmin || !scopedAdminData) return false;
+        if (scopedAdminData.type === 'tournament' && docData.tournamentId === scopedAdminData.value) return true;
+        if (scopedAdminData.type === 'city' && docData.city === scopedAdminData.value) return true;
+        return false;
+    };
+
+    let existingDoc = null;
+    if (regId) {
+        // 修改模式：讀取舊資料驗證權限
+        const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('registrations').doc(regId);
+        const snap = await docRef.get();
+        if (!snap.exists) {
+            throw new functions.https.HttpsError('not-found', '找不到該筆報名資料！');
+        }
+        existingDoc = snap.data();
+
+        // 權限檢查：只有本人、管理員、或在 scope 內之局部管理員能修改
+        const isOwner = existingDoc.userId === callerUid;
+        const hasAccess = isCallerAdmin || isOwner || (isCallerScopedAdmin && isWithinScope(existingDoc));
+        if (!hasAccess) {
+            throw new functions.https.HttpsError('permission-denied', '您沒有權限修改此報名資料！');
+        }
+    }
+
+    // 4. 取得正確報名費 (費率計算權威來源)
+    const tournamentId = payload.tournamentId;
+    const item = payload.item;
+    const group = payload.group;
+    if (!tournamentId || !item || !group) {
+        throw new functions.https.HttpsError('invalid-argument', '缺少賽事、項目或組別等必要欄位！');
+    }
+
+    let expectedFee = 0;
+    try {
+        const settingsSnap = await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('settings').doc('global').get();
+        if (settingsSnap.exists) {
+            const settings = settingsSnap.data();
+            const tour = (settings.tournaments || []).find(t => t.id === tournamentId);
+            if (tour) {
+                if (tour.fees && tour.fees[item] && tour.fees[item][group] !== undefined) {
+                    expectedFee = Number(tour.fees[item][group]) || 0;
+                }
+            } else {
+                throw new functions.https.HttpsError('invalid-argument', '找不到指定之賽事！');
+            }
+        } else {
+            throw new functions.https.HttpsError('internal', '系統找不到賽事設定檔！');
+        }
+    } catch (err) {
+        console.error('費率計算錯誤:', err);
+        throw new functions.https.HttpsError('internal', '取得費率設定失敗：' + err.message);
+    }
+
+    // 5. 填寫欄位與防注入過濾
+    const fieldsToSave = {
+        tournamentId: payload.tournamentId,
+        tournamentName: payload.tournamentName,
+        city: payload.city || '',
+        unit: payload.unit || '',
+        phone: payload.phone || '',
+        leader: payload.leader || '',
+        manager: payload.manager || '',
+        coach1: payload.coach1 || '',
+        coach2: payload.coach2 || '',
+        coach3: payload.coach3 || '',
+        subTeam: payload.subTeam || '',
+        playerName: payload.playerName || '',
+        birthday: payload.birthday || '',
+        idNumber: payload.idNumber || '',
+        level: payload.level || '',
+        fee: expectedFee, // 後端決定
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    const isProxyAction = isCallerAdmin || (isCallerScopedAdmin && isWithinScope(fieldsToSave));
+
+    if (!regId) {
+        // 新增模式
+        fieldsToSave.userId = isProxyAction && payload.userId ? payload.userId : callerUid;
+        fieldsToSave.email = isProxyAction && payload.email ? payload.email : (callerEmail || '未知帳號');
+        fieldsToSave.time = new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
+        fieldsToSave.createdAt = admin.firestore.FieldValue.serverTimestamp();
+        
+        if (isProxyAction && payload.proxyBy) {
+            fieldsToSave.proxyBy = payload.proxyBy;
+        } else if (isProxyAction && fieldsToSave.userId !== callerUid) {
+            fieldsToSave.proxyBy = callerEmail;
+        }
+
+        const newDocRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('registrations').doc();
+        await newDocRef.set(fieldsToSave);
+        return { success: true, id: newDocRef.id, fee: expectedFee };
+    } else {
+        // 修改模式
+        // 保留 owner 資訊
+        fieldsToSave.userId = existingDoc.userId;
+        fieldsToSave.email = existingDoc.email || '未知帳號';
+        fieldsToSave.time = existingDoc.time || new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
+        if (existingDoc.createdAt) {
+            fieldsToSave.createdAt = existingDoc.createdAt;
+        }
+        if (existingDoc.proxyBy) {
+            fieldsToSave.proxyBy = existingDoc.proxyBy;
+        }
+
+        const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('registrations').doc(regId);
+        await docRef.set(fieldsToSave, { merge: true });
+        return { success: true, id: regId, fee: expectedFee };
+    }
+});
+
+// ==========================================
 // ✨ 自動資料聚合器：當報名資料異動時，自動更新帳號統計
 // ==========================================
 exports.aggregateUserStats = functions.firestore
     .document('artifacts/{appId}/public/data/registrations/{regId}')
     .onWrite(async (change, context) => {
+        // ✨ 性能優化：若為純更新，先比對統計相關欄位是否有異動，避免重複執行無意義的讀寫
+        if (change.before.exists && change.after.exists) {
+            const before = change.before.data();
+            const after = change.after.data();
+            const hasSignificantChange = 
+                before.unit !== after.unit ||
+                before.coach1 !== after.coach1 ||
+                before.tournamentId !== after.tournamentId ||
+                before.tournamentName !== after.tournamentName ||
+                before.email !== after.email ||
+                before.item !== after.item ||
+                before.group !== after.group ||
+                before.fee !== after.fee;
+                
+            if (!hasSignificantChange) {
+                console.log(`[統計彙整] 偵測到無關統計的更新，跳過此操作。`);
+                return null;
+            }
+        }
+
         const db = admin.firestore();
         const appId = context.params.appId;
         

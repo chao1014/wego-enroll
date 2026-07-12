@@ -29,8 +29,32 @@ import { currentLang, translations } from "./i18n.js";
 import { logEvent } from "firebase/analytics";
 
 // ==========================================
-// 🌟 全域載入狀態同步控制 (Loader Coordination)
+// 🌟 全域載入狀態與監聽管理 (Loader & Listeners)
 // ==========================================
+window.clearAllListeners = () => {
+    console.log("🧹 正在清除全域 Firestore 監聽器...");
+    if (registrationsUnsubscribe) {
+        try { registrationsUnsubscribe(); } catch (e) {}
+        setRegistrationsUnsubscribe(null);
+    }
+    if (window.teamProfilesUnsub) {
+        try { window.teamProfilesUnsub(); } catch (e) {}
+        window.teamProfilesUnsub = null;
+    }
+    if (window.unitSubmissionsUnsub) {
+        try { window.unitSubmissionsUnsub(); } catch (e) {}
+        window.unitSubmissionsUnsub = null;
+    }
+    if (window.adminSettingsUnsubscribe) {
+        try { window.adminSettingsUnsubscribe(); } catch (e) {}
+        window.adminSettingsUnsubscribe = null;
+    }
+    if (window.sessionUnsubscribe) {
+        try { window.sessionUnsubscribe(); } catch (e) {}
+        window.sessionUnsubscribe = null;
+    }
+};
+
 window.isDataReady = false;
 window.isAuthReady = false;
 
@@ -129,6 +153,21 @@ const setupRegistrationsListener = (user) => {
         emit('teamProfilesUpdated', profiles);
     }, (error) => {
         console.error("常用名單監聽錯誤:", error);
+    });
+
+    // 單位上傳總表與匯款紀錄即時監聽
+    if (window.unitSubmissionsUnsub) {
+        window.unitSubmissionsUnsub();
+    }
+    const subQuery = query(getDbPath('unit_submissions'), where("userId", "==", user.uid));
+    window.unitSubmissionsUnsub = onSnapshot(subQuery, (snap) => {
+        const subs = [];
+        snap.forEach(d => subs.push({ id: d.id, ...d.data() }));
+        setAppData({ myUnitSubmissions: subs });
+        emit('unitSubmissionsUpdated', subs);
+        if (window.updateMyRecordsErrorBadge) window.updateMyRecordsErrorBadge();
+    }, (error) => {
+        console.error("單位上傳資料監聽錯誤:", error);
     });
 };
 

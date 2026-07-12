@@ -104,20 +104,22 @@ window.logout = async () => {
 
     setSelectedTournament(null);
     
-    if (registrationsUnsubscribe) {
-        try { registrationsUnsubscribe(); } catch (e) {}
-        setRegistrationsUnsubscribe(null);
-    }
-
-    if (typeof window.adminSettingsUnsubscribe === 'function') {
-        try { window.adminSettingsUnsubscribe(); } catch (e) {}
-        window.adminSettingsUnsubscribe = null;
-    }
-    
-    // ✨ 清除 Session 監聽器
-    if (window.sessionUnsubscribe) {
-        window.sessionUnsubscribe();
-        window.sessionUnsubscribe = null;
+    // ✨ 核心升級：呼叫全域清除所有監聽器，防止任何背景連線與記憶體洩漏
+    if (window.clearAllListeners) {
+        window.clearAllListeners();
+    } else {
+        if (registrationsUnsubscribe) {
+            try { registrationsUnsubscribe(); } catch (e) {}
+            setRegistrationsUnsubscribe(null);
+        }
+        if (typeof window.adminSettingsUnsubscribe === 'function') {
+            try { window.adminSettingsUnsubscribe(); } catch (e) {}
+            window.adminSettingsUnsubscribe = null;
+        }
+        if (window.sessionUnsubscribe) {
+            try { window.sessionUnsubscribe(); } catch (e) {}
+            window.sessionUnsubscribe = null;
+        }
     }
 
     try {
@@ -407,6 +409,14 @@ let lastActivityTime = Date.now();
 
 // 記錄最後一次操作的真實時間戳
 const updateActivityTime = () => {
+    // ✨ 核心修復：防止背景休眠喚醒時的「滑鼠移動」瞬間重置時間
+    // 在重置時間之前，先檢查是否「已經」閒置超過 15 分鐘了！
+    if (currentUser && (Date.now() - lastActivityTime > IDLE_TIMEOUT_MS)) {
+        lastActivityTime = Date.now(); // 防止重複觸發
+        alert(t('login.idle-timeout') || '⚠️ 系統閒置過久，基於安全考量已自動為您登出。');
+        if (window.logout) window.logout();
+        return;
+    }
     lastActivityTime = Date.now();
 };
 
@@ -417,7 +427,7 @@ window.addEventListener('touchstart', updateActivityTime);
 window.addEventListener('scroll', updateActivityTime);
 window.addEventListener('click', updateActivityTime);
 
-// 每 30 秒巡邏一次 (即使瀏覽器在背景休眠，只要醒來巡邏時發現時間超過就會觸發)
+// 每 30 秒巡邏一次 (捕捉停留在原畫面完全不動的情況)
 setInterval(async () => {
     // 只有在「有登入」且「閒置時間大於 15 分鐘」時才執行
     if (currentUser && (Date.now() - lastActivityTime > IDLE_TIMEOUT_MS)) {

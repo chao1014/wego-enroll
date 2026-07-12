@@ -1,0 +1,23 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /artifacts/{appId}/users/{userId}/{tournamentId}/{allPaths=**} {
+      // 限制使用者僅能上傳/讀取自己的目錄，且必須登入
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // 允許系統管理員、超級管理員、以及有權限的局部管理員讀取以利審核
+      allow read: if request.auth != null && (
+        request.auth.token.admin == true || 
+        request.auth.token.email == "chao82465@gmail.com" ||
+        (request.auth.token.scopedAdmin != null && (
+          (request.auth.token.scopedAdmin.type == 'tournament' && request.auth.token.scopedAdmin.value == tournamentId) ||
+          (request.auth.token.scopedAdmin.type == 'city') // 縣市局部管理員放行讀取
+        ))
+      );
+      
+      // 限制：只有管理員，或者擁有權限的擁有者在狀態為 pending 時可以寫入/刪除（在前端 UI 配合狀態鎖定）
+      // 由於 Storage 規則無法方便取得 Firestore 狀態，我們在 Firestore 端對 Submission 進行強狀態鎖定，
+      // 且在 Storage 端限制 write 只給對應 userId。
+    }
+  }
+}

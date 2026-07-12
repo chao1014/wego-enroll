@@ -1,6 +1,7 @@
-import { addDoc, doc, updateDoc, deleteDoc, setDoc, getDocs, query, where } from "firebase/firestore";
+import { addDoc, doc, updateDoc, deleteDoc, setDoc, getDocs, query, where, serverTimestamp } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
-import { db, getDbPath, appIdStr, analytics, functions } from "./firebase.js";
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
+import { db, getDbPath, appIdStr, analytics, functions, storage } from "./firebase.js";
 import { appData, currentUser, currentUserRole, selectedTournament, setSelectedTournament, recordToDelete, setRecordToDelete, subscribe, emit } from "./store.js";
 import { verifyAuthBeforeAction } from "./auth.js";
 import { logEvent } from "firebase/analytics";
@@ -117,6 +118,7 @@ window.showCustomConfirm = (title, htmlMessage, confirmText = '確定', cancelTe
 
         // 顯示 Modal
         modal.classList.remove('hidden');
+        modal.classList.add('flex');
         setTimeout(() => {
             modal.firstElementChild.classList.remove('scale-95');
             modal.firstElementChild.classList.add('scale-100');
@@ -128,6 +130,7 @@ window.showCustomConfirm = (title, htmlMessage, confirmText = '確定', cancelTe
             modal.firstElementChild.classList.add('scale-95');
             setTimeout(() => {
                 modal.classList.add('hidden');
+                modal.classList.remove('flex');
                 // 清除事件監聽器，避免下一次呼叫時重複觸發
                 btnOk.onclick = null;
                 btnCancel.onclick = null;
@@ -302,6 +305,19 @@ window.navigateToManageProfiles = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
         
     }, 300);
+};
+
+window.goToMyRecordsForUpload = () => {
+    if (!currentUser) {
+        window.showToast("👉 請先登入系統後，即可至「我的報名」列印總表與上傳單據！", "info");
+        if (typeof window.switchAuthModalTab === 'function') window.switchAuthModalTab('login');
+        const authModal = document.getElementById('authModal');
+        if (authModal) authModal.classList.remove('hidden');
+        return;
+    }
+    if (typeof window.navigate === 'function') {
+        window.navigate('my-records');
+    }
 };
 
 window.applyHistoryProfile = (p) => {
@@ -521,14 +537,12 @@ window.renderMyRecordsPage = () => {
     const groupedByTour = {};
     
     myData.forEach(r => {
+        const tourObj = appData.tournaments.find(t => t.id === r.tournamentId);
+        // ✨ 如果賽事在後台已被設定為隱藏 (isVisible === false) 或被刪除，同步隱藏不顯示於「我的報名」
+        if (!tourObj || tourObj.isVisible === false) return;
+
         if (!groupedByTour[r.tournamentId]) {
-            // ✨ 強制從當前的賽事列表找回最新物件
-            const tourObj = appData.tournaments.find(t => t.id === r.tournamentId);
-            
-            // 如果找得到賽事物件，用 getLang 處理雙語；找不到則回退使用報名時記錄的名稱
-            const displayName = tourObj ? getLang(tourObj, 'name') : r.tournamentName;
-            
-            groupedByTour[r.tournamentId] = { name: displayName, regs: [] };
+            groupedByTour[r.tournamentId] = { name: getLang(tourObj, 'name'), regs: [] };
         }
         groupedByTour[r.tournamentId].regs.push(r);
     });
@@ -540,6 +554,113 @@ window.renderMyRecordsPage = () => {
         container.innerHTML = `<div class="text-center py-20 text-gray-400"><i class="fas fa-folder-open text-5xl mb-4"></i><p class="font-bold">${t('records.empty')}</p></div>`;
         return;
     }
+
+    // ✨ 統計全域各單位的報名完成度進度與審核指標
+    let totalUnits = 0;
+    let incompleteCount = 0;
+    let rejectedCount = 0;
+    let pendingCount = 0;
+    let verifiedCount = 0;
+    let totalProgressScore = 0;
+
+    tourIds.forEach(tId => {
+        const data = groupedByTour[tId];
+        const unitKeysSet = new Set();
+        data.regs.forEach(r => {
+            const st = r.subTeam || '';
+            unitKeysSet.add(st ? `${r.unit}@@${st}` : r.unit);
+        });
+
+        unitKeysSet.forEach(key => {
+            totalUnits++;
+            const parts = key.split('@@');
+            const u = parts[0];
+            const st = parts[1] || '';
+            const sub = (appData.myUnitSubmissions || []).find(s => 
+                s.tournamentId === tId && s.unit === u && s.subTeam === st
+            );
+            const hasSummary = !!(sub && sub.summaryFormUrl);
+            const hasRemittance = !!(sub && sub.remittanceUrl);
+            const score = 1 + (hasSummary ? 1 : 0) + (hasRemittance ? 1 : 0) + (sub?.status === 'verified' ? 1 : 0);
+            totalProgressScore += score;
+
+            if (sub && sub.status === 'rejected') {
+                rejectedCount++;
+            } else if (!hasSummary || !hasRemittance) {
+                incompleteCount++;
+            } else if (sub && sub.status === 'verified') {
+                verifiedCount++;
+            } else {
+                pendingCount++;
+            }
+        });
+    });
+
+    const overallPct = totalUnits > 0 ? Math.round((totalProgressScore / (totalUnits * 4)) * 100) : 0;
+
+    // ✨ 建立頂部位置 A：整體報名完成度進度儀表板 (Dashboard Banner)
+    const dashboardBanner = document.createElement('div');
+    dashboardBanner.className = "bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-3xl shadow-xl p-6 sm:p-7 mb-8 text-white border border-gray-700/60";
+    dashboardBanner.innerHTML = `
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5 border-b border-gray-700/60 pb-5">
+            <div>
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-tkdBlue/20 text-blue-400 border border-blue-500/30 text-xs font-black mb-2">
+                    <i class="fas fa-chart-line"></i> 報名送件進度中控台
+                </div>
+                <h2 class="text-xl sm:text-2xl font-black tracking-wide">整體報名完成度儀表板</h2>
+                <p class="text-xs text-gray-300 mt-1 font-black">即時掌握您管理的 ${totalUnits} 支參賽隊伍單據與主辦單位審核進度</p>
+            </div>
+            <div class="flex items-center gap-3 bg-gray-800/80 px-4 py-3 rounded-2xl border border-gray-700/80">
+                <div class="text-right">
+                    <div class="text-[10px] text-gray-300 font-black uppercase">總體送件進度</div>
+                    <div class="text-2xl font-black text-blue-400">${overallPct}%</div>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 text-xl shrink-0">
+                    <i class="fas fa-tasks"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="bg-gray-800/70 border border-gray-700/60 rounded-2xl p-3.5 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center text-lg shrink-0">
+                    <i class="fas fa-file-upload"></i>
+                </div>
+                <div>
+                    <div class="text-[11px] text-gray-300 font-black">缺件待傳</div>
+                    <div class="text-lg font-black text-amber-300">${incompleteCount} 隊</div>
+                </div>
+            </div>
+            <div class="bg-gray-800/70 border border-gray-700/60 rounded-2xl p-3.5 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-red-500/15 text-red-400 flex items-center justify-center text-lg shrink-0">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div>
+                    <div class="text-[11px] text-gray-300 font-black">遭退件待修正</div>
+                    <div class="text-lg font-black text-red-400">${rejectedCount} 隊</div>
+                </div>
+            </div>
+            <div class="bg-gray-800/70 border border-gray-700/60 rounded-2xl p-3.5 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center text-lg shrink-0">
+                    <i class="fas fa-hourglass-half"></i>
+                </div>
+                <div>
+                    <div class="text-[11px] text-gray-300 font-black">官方審核中</div>
+                    <div class="text-lg font-black text-blue-300">${pendingCount} 隊</div>
+                </div>
+            </div>
+            <div class="bg-gray-800/70 border border-gray-700/60 rounded-2xl p-3.5 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-green-500/15 text-green-400 flex items-center justify-center text-lg shrink-0">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div>
+                    <div class="text-[11px] text-gray-300 font-black">審核確認生效</div>
+                    <div class="text-lg font-black text-green-400">${verifiedCount} 隊</div>
+                </div>
+            </div>
+        </div>
+    `;
+    container.appendChild(dashboardBanner);
 
     tourIds.forEach(tId => {
         const data = groupedByTour[tId];
@@ -586,23 +707,141 @@ window.renderMyRecordsPage = () => {
             const printBtnText = t('records.print-btn');
             const displayUnit = g.subTeam ? `${g.unit} (${g.subTeam})` : g.unit;
 
+            const sub = (appData.myUnitSubmissions || []).find(s => 
+                s.tournamentId === tId && s.unit === g.unit && s.subTeam === g.subTeam
+            );
+
+            let statusBadge = `<span class="inline-flex items-center justify-center h-5 px-2 bg-gray-200 text-gray-700 border border-gray-300 rounded-md text-[10px] font-black shrink-0 leading-none">未上傳</span>`;
+            if (sub) {
+                if (sub.status === 'pending') {
+                    statusBadge = `<span class="inline-flex items-center justify-center h-5 px-2 bg-orange-50 text-orange-600 border border-orange-100 rounded-md text-[10px] font-bold shrink-0 leading-none">待審核</span>`;
+                } else if (sub.status === 'verified') {
+                    statusBadge = `<span class="inline-flex items-center justify-center h-5 px-2 bg-green-50 text-green-600 border border-green-100 rounded-md text-[10px] font-bold shrink-0 leading-none">已確認</span>`;
+                } else if (sub.status === 'rejected') {
+                    statusBadge = `<span class="inline-flex items-center justify-center h-5 px-2 bg-red-50 text-red-600 border border-red-100 rounded-md text-[10px] font-bold shrink-0 leading-none">資料錯誤</span>`;
+                }
+            }
+
+            let rejectedReasonHtml = '';
+            if (sub && sub.status === 'rejected' && sub.adminNotes) {
+                rejectedReasonHtml = `
+                    <div class="bg-red-50 text-red-600 text-[11px] font-bold p-2.5 rounded-xl flex items-start gap-1.5 mt-2 border border-red-100/50 leading-snug">
+                        <i class="fas fa-exclamation-circle mt-0.5 shrink-0 text-red-500"></i>
+                        <div>
+                            <span class="font-black">錯誤原因：</span>
+                            <span class="font-medium">${sanitizeHTML(sub.adminNotes)}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const isSummaryUploaded = !!(sub && sub.summaryFormUrl);
+            const isRemittanceUploaded = !!(sub && sub.remittanceUrl);
+
+            const summaryBtnClass = isSummaryUploaded
+                ? "bg-blue-50 hover:bg-blue-100 border-blue-200 text-tkdBlue font-bold w-full py-2 rounded-xl text-xs transition-all shadow-sm border flex items-center justify-center gap-1.5"
+                : "bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-600 hover:text-gray-800 font-bold w-full py-2 rounded-xl text-xs transition-all border flex items-center justify-center gap-1.5";
+
+            const remittanceBtnClass = isRemittanceUploaded
+                ? "bg-green-50 hover:bg-green-100 border-green-200 text-green-600 font-bold w-full py-2 rounded-xl text-xs transition-all shadow-sm border flex items-center justify-center gap-1.5"
+                : "bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-600 hover:text-gray-800 font-bold w-full py-2 rounded-xl text-xs transition-all border flex items-center justify-center gap-1.5";
+
+            const summaryBtnText = isSummaryUploaded ? "總表 ✓" : "上傳總表";
+            const remittanceBtnText = isRemittanceUploaded ? "匯款 ✓" : "上傳匯款";
+
+            // ✨ 計算該單位的 4 階段流程完成百分比
+            const stepScore = 1 + (isSummaryUploaded ? 1 : 0) + (isRemittanceUploaded ? 1 : 0) + (sub?.status === 'verified' ? 1 : 0);
+            const stepPct = stepScore * 25;
+
+            // ✨ 智慧下一步行動指引 (Smart CTA)
+            let smartCtaHtml = '';
+            if (sub && sub.status === 'rejected') {
+                smartCtaHtml = `
+                    <button onclick="window.openUploadSummaryModal('${tId}', '${sanitizeHTML(g.unit)}', '${sanitizeHTML(g.subTeam)}')" class="w-full mt-2.5 py-2.5 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs shadow-md flex items-center justify-center gap-1.5 transition-all active:scale-95">
+                        <i class="fas fa-exclamation-triangle"></i><span>查看退回原因並重新傳送單據</span>
+                    </button>
+                `;
+            } else if (!isSummaryUploaded) {
+                smartCtaHtml = `
+                    <button onclick="window.openUploadSummaryModal('${tId}', '${sanitizeHTML(g.unit)}', '${sanitizeHTML(g.subTeam)}')" class="w-full mt-2.5 py-2.5 px-3 rounded-xl bg-tkdBlue hover:bg-blue-700 text-white font-black text-xs shadow-md flex items-center justify-center gap-1.5 transition-all active:scale-95">
+                        <i class="fas fa-file-upload"></i><span>前往上傳簽名後的報名總表完成送件</span>
+                    </button>
+                `;
+            } else if (!isRemittanceUploaded) {
+                smartCtaHtml = `
+                    <button onclick="window.openUploadRemittanceModal('${tId}', '${sanitizeHTML(g.unit)}', '${sanitizeHTML(g.subTeam)}')" class="w-full mt-2.5 py-2.5 px-3 rounded-xl bg-tkdBlue hover:bg-blue-700 text-white font-black text-xs shadow-md flex items-center justify-center gap-1.5 transition-all active:scale-95">
+                        <i class="fas fa-receipt"></i><span>前往上傳匯款證明完成送件</span>
+                    </button>
+                `;
+            } else if (sub && sub.status === 'verified') {
+                smartCtaHtml = `
+                    <div class="w-full mt-2.5 py-2 px-3 rounded-xl bg-green-50 text-green-700 border border-green-200/60 font-black text-xs flex items-center justify-center gap-1.5">
+                        <i class="fas fa-check-circle"></i><span>單據齊全，主辦單位審核通過生效</span>
+                    </div>
+                `;
+            } else {
+                smartCtaHtml = `
+                    <div class="w-full mt-2.5 py-2 px-3 rounded-xl bg-blue-50 text-tkdBlue border border-blue-200/60 font-black text-xs flex items-center justify-center gap-1.5">
+                        <i class="fas fa-hourglass-half"></i><span>單據已齊全送交，主辦單位複核中</span>
+                    </div>
+                `;
+            }
+
             const unitItem = document.createElement('div');
-            unitItem.className = "flex justify-between items-center bg-white border border-gray-200 p-3 rounded-xl shadow-sm hover:border-tkdBlue transition-colors group";
+            unitItem.className = "flex flex-col bg-white border border-gray-200 p-4 sm:p-5 rounded-2xl shadow-sm hover:border-tkdBlue transition-all group gap-2.5";
             
             unitItem.innerHTML = `
-                <div class="flex items-center overflow-hidden pr-3">
-                    <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center shrink-0 mr-3 border border-gray-100 group-hover:bg-blue-50 transition-colors">
-                        <i class="fas fa-shield-alt text-gray-400 group-hover:text-tkdBlue transition-colors"></i>
+                <!-- 第一行：單位名稱、狀態標章與報名項數 -->
+                <div class="flex items-start flex-grow min-w-0">
+                    <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center shrink-0 mr-2.5 border border-gray-100 group-hover:bg-blue-50 transition-colors mt-0">
+                        <i class="fas fa-shield-alt text-gray-600 group-hover:text-tkdBlue transition-colors text-sm"></i>
                     </div>
-                    <div class="truncate">
-                        <div class="font-black text-gray-800 text-sm truncate">${sanitizeHTML(displayUnit)}</div>
-                        <div class="text-[10px] text-gray-400 font-bold mt-0.5">${unitCountInfo}</div>
+                    <div class="flex-grow min-w-0">
+                        <div class="flex justify-between items-start gap-2">
+                            <div class="font-black text-gray-800 text-sm break-words whitespace-normal leading-5 flex-grow" title="${sanitizeHTML(displayUnit)}">${sanitizeHTML(displayUnit)}</div>
+                            <div class="shrink-0 flex items-start">
+                                ${statusBadge}
+                            </div>
+                        </div>
+                        <div class="text-[11px] text-gray-600 font-black mt-1">${unitCountInfo}</div>
                     </div>
                 </div>
+
+                <!-- ✨ 分段式流程進度條 (4 Steps Progress) -->
+                <div class="mt-1 pt-2.5 border-t border-gray-100">
+                    <div class="flex justify-between items-center text-[11px] font-black mb-1.5">
+                        <span class="text-gray-700">單位報名完成度</span>
+                        <span class="font-black ${stepPct === 100 ? 'text-green-600' : 'text-tkdBlue'}">${stepPct}%</span>
+                    </div>
+                    <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden flex">
+                        <div class="h-full ${stepPct === 100 ? 'bg-green-500' : 'bg-tkdBlue'} transition-all duration-500" style="width: ${stepPct}%"></div>
+                    </div>
+                    <div class="grid grid-cols-4 gap-1 text-[10px] font-bold text-gray-600 text-center mt-1.5">
+                        <span class="text-tkdBlue font-black">①建立名單✓</span>
+                        <span class="${isSummaryUploaded ? 'text-tkdBlue font-black' : 'text-gray-600'}">②簽名總表${isSummaryUploaded ? '✓' : ''}</span>
+                        <span class="${isRemittanceUploaded ? 'text-tkdBlue font-black' : 'text-gray-600'}">③匯款證明${isRemittanceUploaded ? '✓' : ''}</span>
+                        <span class="${sub?.status === 'verified' ? 'text-green-600 font-black' : 'text-gray-600'}">④主辦審核${sub?.status === 'verified' ? '✓' : ''}</span>
+                    </div>
+                </div>
+
+                <!-- ✨ 智慧 CTA 按鈕 -->
+                ${smartCtaHtml}
                 
-                <button onclick="window.printTeamSummary('${tId}', '${sanitizeHTML(g.unit)}', '${sanitizeHTML(g.subTeam)}', 'FRONTEND')" class="shrink-0 bg-gray-100 hover:bg-gray-800 hover:text-white text-gray-600 px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center">
-                    <i class="fas fa-print sm:mr-1.5"></i><span class="hidden sm:inline">${printBtnText}</span>
-                </button>
+                <!-- 額外行：若有退回原因，顯示獨立美觀的提示區塊 -->
+                ${rejectedReasonHtml}
+
+                <!-- 並排的列印、上傳總表與上傳匯款按鈕 -->
+                <div class="grid grid-cols-3 gap-2 mt-1 pt-2.5 border-t border-gray-100">
+                    <button onclick="window.printTeamSummary('${tId}', '${sanitizeHTML(g.unit)}', '${sanitizeHTML(g.subTeam)}', 'FRONTEND')" class="bg-gray-100 hover:bg-gray-800 hover:text-white text-gray-600 border border-gray-200 hover:border-gray-800 font-bold w-full py-2 rounded-xl text-xs transition-all shadow-sm flex items-center justify-center gap-1.5 shrink-0 active:scale-95">
+                        <i class="fas fa-print"></i><span>列印總表</span>
+                    </button>
+                    <button onclick="window.openUploadSummaryModal('${tId}', '${sanitizeHTML(g.unit)}', '${sanitizeHTML(g.subTeam)}')" class="${summaryBtnClass}">
+                        <i class="${isSummaryUploaded ? 'fas fa-check-circle' : 'fas fa-file-signature'}"></i><span>${summaryBtnText}</span>
+                    </button>
+                    <button onclick="window.openUploadRemittanceModal('${tId}', '${sanitizeHTML(g.unit)}', '${sanitizeHTML(g.subTeam)}')" class="${remittanceBtnClass}">
+                        <i class="${isRemittanceUploaded ? 'fas fa-check-circle' : 'fas fa-receipt'}"></i><span>${remittanceBtnText}</span>
+                    </button>
+                </div>
             `;
             unitsList.appendChild(unitItem);
         });
@@ -1486,15 +1725,29 @@ window.checkTournamentStatus = () => {
             const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
             const s = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
 
-            // ✨ 修改：翻譯「受理中」與剩餘時間單位
-            msgEl.innerHTML = `<div class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 leading-snug"><div class="text-sm whitespace-nowrap"><i class="fas fa-check-circle mr-1"></i>${t('reg.status-open')}</div><div class="text-xs font-normal whitespace-nowrap">(${t('reg.time-deadline')}: ${tourEndStr})</div></div>`;
-            msgEl.className = "font-black text-green-600 bg-green-50 px-5 py-3 rounded-xl block w-full text-center border border-green-100 shadow-sm";
+            // ✨ 修改：將截止時間移入送出按鈕內，並將原狀態標籤改為提示文案
+            msgEl.innerHTML = `
+                <div class="flex items-start gap-3 text-left">
+                    <div class="w-8 h-8 rounded-full bg-tkdBlue/10 text-tkdBlue flex items-center justify-center shrink-0 mt-0.5">
+                        <i class="fas fa-flag-checkered"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm font-black text-gray-800 mb-1">所有參賽選手皆已新增完畢了嗎？</div>
+                        <div class="text-xs font-bold text-gray-600 leading-relaxed">選手名單建置完成後，下一步務必前往頂部選單「我的報名」下載總表簽名蓋章並完成單據上傳，才算完成正式送件！</div>
+                    </div>
+                </div>
+            `;
+            msgEl.className = "bg-blue-50/50 px-4 py-3.5 rounded-xl block w-full border border-blue-100/60 shadow-sm mt-3";
             btn.disabled = false;
             
             btn.innerHTML = `
-                <div class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 leading-snug">
-                    <div class="text-base whitespace-nowrap"><i class="fas ${mainIcon} mr-2"></i>${mainActionText}</div>
-                    <div class="text-[11px] sm:text-xs font-normal opacity-90 tracking-wider whitespace-nowrap">(${t('reg.time-remaining')} ${d} ${t('reg.day')} ${h}:${m}:${s})</div>
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 leading-snug">
+                    <div class="text-base whitespace-nowrap font-bold"><i class="fas ${mainIcon} mr-2"></i>${mainActionText}</div>
+                    <div class="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 text-[11px] sm:text-xs font-normal tracking-wider whitespace-nowrap opacity-90">
+                        <span>(${t('reg.time-remaining')} ${d} ${t('reg.day')} ${h}:${m}:${s})</span>
+                        <span class="hidden sm:inline-block border-l border-white/30 h-3"></span>
+                        <span>(${t('reg.time-deadline')}: ${tourEndStr})</span>
+                    </div>
                 </div>
             `;
         }
@@ -1695,35 +1948,48 @@ window.renderUserTables = () => {
         const chevronRotateClass = isExpanded ? 'rotate-180' : '';
 
         let html = `
-            <div class="bg-gray-100 border-b border-gray-200 px-5 py-3 flex flex-wrap justify-between items-center gap-3 cursor-pointer select-none hover:bg-gray-200 transition-colors" 
+            <div class="bg-gray-100 border-b border-gray-200 px-4 sm:px-5 py-3.5 flex items-center justify-between gap-3 cursor-pointer select-none hover:bg-gray-200 transition-colors" 
                  onclick="window.toggleUnitCard('${safeUnitId}', '${encodedUnit}')">
                 
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2.5 min-w-0">
                     <div class="w-6 h-6 flex items-center justify-center rounded-full bg-white shadow-sm border border-gray-200 shrink-0">
                         <i id="icon-${safeUnitId}" class="fas fa-chevron-down text-gray-400 text-[10px] transition-transform duration-300 transform ${chevronRotateClass}"></i>
                     </div>
-                    <h4 class="text-base font-black text-tkdBlue flex items-center tracking-wide">
-                        <i class="fas fa-shield-alt mr-2 text-gray-400"></i>${sanitizeHTML(displayUnitName)}
+                    <h4 class="text-base font-black text-tkdBlue flex items-center tracking-wide truncate">
+                        <i class="fas fa-shield-alt mr-2 text-gray-400 shrink-0"></i><span class="truncate">${sanitizeHTML(displayUnitName)}</span>
                     </h4>
-                    <span class="text-[10px] font-bold text-gray-500 bg-white border border-gray-200 px-2 py-0.5 rounded-full shadow-sm">
+                </div>
+
+                <div class="flex items-center gap-2.5 shrink-0">
+                    <span class="text-[10px] font-bold text-gray-500 bg-white border border-gray-200 px-2.5 py-1 rounded-full shadow-sm">
                         ${regs.length} 筆紀錄
                     </span>
+                    <button onclick="event.stopPropagation(); window.goToMyRecordsForUpload()" 
+                    class="hidden sm:inline-flex text-xs bg-tkdBlue text-white px-4 py-2 rounded-xl font-black hover:bg-blue-700 transition-colors shadow-sm items-center gap-1.5 shrink-0 active:scale-95">
+                        <i class="fas fa-folder-open"></i>列印總表與上傳單據
+                    </button>
                 </div>
-                
-                <button onclick="event.stopPropagation(); window.printTeamSummary('${regs[0].tournamentId}', '${jsSafeUnitName}', '${jsSafeSubTeam}', '${firstReg.email}')" 
-                class="text-xs bg-gray-800 text-white px-4 py-2 rounded-lg font-bold hover:bg-black transition-colors shadow-sm whitespace-nowrap">
-                        <i class="fas fa-print mr-1.5"></i>${t('table.print-summary-btn')}
+            </div>
+
+            <div id="content-${safeUnitId}" class="${contentHiddenClass}">
+                <div class="bg-gray-50/80 border-b border-gray-200 px-4 sm:px-5 py-3 text-xs text-gray-600 space-y-1.5 sm:space-y-0 sm:grid sm:grid-cols-3 sm:gap-3">
+                    <div class="truncate"><span class="font-black text-gray-400 mr-1.5">${t('table.phone-label')}</span> ${sanitizeHTML(phoneInfo)}</div>
+                    <div class="truncate"><span class="font-black text-gray-400 mr-1.5">${t('table.leader-manager-label')}</span> ${sanitizeHTML(leaderInfo)} / ${sanitizeHTML(managerInfo)}</div>
+                    <div class="truncate"><span class="font-black text-gray-400 mr-1.5">${t('table.coach-list-label')}</span> ${sanitizeHTML(allCoaches)}</div>
+                </div>
+
+                <div class="sm:hidden bg-blue-50/70 border-b border-blue-100 px-4 py-3 flex flex-col gap-2.5">
+                    <div class="text-xs font-bold text-blue-900 flex items-center">
+                        <i class="fas fa-info-circle text-tkdBlue mr-1.5 shrink-0"></i>
+                        <span>確認資料無誤後，請列印報名總表並完成單據上傳。</span>
+                    </div>
+                    <button onclick="window.goToMyRecordsForUpload()" 
+                    class="w-full text-xs bg-tkdBlue text-white py-2.5 rounded-xl font-black hover:bg-blue-700 transition-colors shadow-sm flex items-center justify-center gap-1.5 active:scale-95">
+                        <i class="fas fa-folder-open"></i>列印總表與上傳單據
                     </button>
                 </div>
 
-                <div id="content-${safeUnitId}" class="${contentHiddenClass}">
-                    <div class="bg-gray-50/80 border-b border-gray-200 px-5 py-2.5 text-xs text-gray-600 grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <div class="truncate"><span class="font-black text-gray-400 mr-1.5">${t('table.phone-label')}</span> ${sanitizeHTML(phoneInfo)}</div>
-                        <div class="truncate"><span class="font-black text-gray-400 mr-1.5">${t('table.leader-manager-label')}</span> ${sanitizeHTML(leaderInfo)} / ${sanitizeHTML(managerInfo)}</div>
-                        <div class="truncate"><span class="font-black text-gray-400 mr-1.5">${t('table.coach-list-label')}</span> ${sanitizeHTML(allCoaches)}</div>
-                    </div>
-
-                <div class="overflow-x-auto">
+                <div class="hidden md:block overflow-x-auto">
                     <table class="w-full text-left whitespace-nowrap">
                         <thead class="bg-white text-[10px] text-gray-400 uppercase tracking-widest border-b border-gray-100">
                             <tr>
@@ -1739,6 +2005,8 @@ window.renderUserTables = () => {
                         </thead>
                         <tbody class="text-xs font-medium text-gray-700">
         `;
+
+        let mobileCardsHtml = '<div class="md:hidden space-y-3 p-3 bg-gray-50/50">';
 
         regs.forEach(r => {
             // ✨ 安全防護：前端渲染總表時，同樣強制從大腦 (selectedTournament) 核對費用，完全杜絕任何顯示錯誤金額的可能
@@ -1758,11 +2026,16 @@ window.renderUserTables = () => {
                 </div>
             `).join('');
 
+            const nameStr = namesArr.map((n, idx) => `${idx === 0 ? proxyBadge : ''}${sanitizeHTML(n)}`).join(' / ');
+            const birthStr = birthsArr.map(b => sanitizeHTML(b) || '-').join(' / ');
+            const idStr = idsArr.map(id => sanitizeHTML(id) || '-').join(' / ');
+
             const birthHtml = birthsArr.map(b => `<div class="mb-1 text-gray-500">${sanitizeHTML(b) || '-'}</div>`).join('');
             const idHtml = idsArr.map(id => `<div class="mb-1 text-gray-500">${sanitizeHTML(id) || '-'}</div>`).join('');
             const idDataHtml = requireId ? `<td class="px-5 py-3 font-bold align-top leading-relaxed tracking-wider">${idHtml}</td>` : '';
 
             let actionHtml = '';
+            let actionCardHtml = '';
             if (canEditOrDelete) {
                 actionHtml = `
                     <div class="flex flex-row justify-center gap-2 items-center">
@@ -1770,9 +2043,27 @@ window.renderUserTables = () => {
                         <button onclick="promptDelete('${r.id}')" class="text-red-500 bg-red-50 hover:bg-red-500 hover:text-white border border-red-100 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors whitespace-nowrap shadow-sm"><i class="fas fa-trash-alt mr-1"></i>${t('table.action-delete') || '刪除'}</button>
                     </div>
                 `;
+                actionCardHtml = `
+                    <div class="grid grid-cols-2 gap-2.5 pt-3 mt-3 border-t border-gray-100">
+                        <button onclick="editRecord('${r.id}')" class="w-full text-tkdBlue bg-blue-50 hover:bg-tkdBlue hover:text-white border border-blue-200 py-2.5 rounded-xl text-xs font-black transition-colors flex items-center justify-center shadow-sm"><i class="fas fa-edit mr-1.5"></i>${t('table.action-edit') || '修改資料'}</button>
+                        <button onclick="promptDelete('${r.id}')" class="w-full text-red-600 bg-red-50 hover:bg-red-500 hover:text-white border border-red-200 py-2.5 rounded-xl text-xs font-black transition-colors flex items-center justify-center shadow-sm"><i class="fas fa-trash-alt mr-1.5"></i>${t('table.action-delete') || '刪除'}</button>
+                    </div>
+                `;
             } else {
                 actionHtml = `<span class="text-[11px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded border border-red-100 cursor-not-allowed select-none">${t('reg.status-closed') || '已截止'}</span>`;
+                actionCardHtml = `
+                    <div class="pt-3 mt-3 border-t border-gray-100 text-center">
+                        <span class="text-xs font-bold text-red-500 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 inline-block">${t('reg.status-closed') || '已截止報名修改'}</span>
+                    </div>
+                `;
             }
+
+            const idCardRowHtml = requireId ? `
+                <div class="flex justify-between items-center text-xs py-0.5">
+                    <span class="text-gray-500 font-bold">${t('table.id') || '身分證字號'}</span>
+                    <span class="font-bold text-gray-700">${idStr}</span>
+                </div>
+            ` : '';
 
             html += `
                 <tr class="border-b border-gray-50 hover:bg-blue-50/30 transition-colors">
@@ -1788,7 +2079,47 @@ window.renderUserTables = () => {
                     </td>
                 </tr>
             `;
+
+            mobileCardsHtml += `
+                <article class="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm hover:border-blue-300 transition-colors">
+                    <div class="flex items-center justify-between gap-3 pb-3 border-b border-gray-100">
+                        <h4 class="text-base font-black text-gray-900 leading-snug truncate">${nameStr}</h4>
+                        <span class="shrink-0 text-sm font-black text-tkdRed bg-red-50 border border-red-100 px-3 py-1 rounded-xl">
+                            $ ${displayFee}
+                        </span>
+                    </div>
+
+                    <div class="py-3 space-y-2 border-b border-gray-100">
+                        <div class="flex justify-between items-center text-xs py-0.5">
+                            <span class="text-gray-500 font-bold">${t('table.item') || '參賽項目'}</span>
+                            <span class="font-black text-tkdBlue">${sanitizeHTML(getLang(r.item))}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs py-0.5">
+                            <span class="text-gray-500 font-bold">${t('table.group') || '組別'}</span>
+                            <span class="font-bold text-gray-800">${sanitizeHTML(getLang(r.group))}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs py-0.5">
+                            <span class="text-gray-500 font-bold">${t('table.level') || '量級/級別'}</span>
+                            <span class="font-black text-red-600">${sanitizeHTML(getLang(r.level))}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs py-0.5">
+                            <span class="text-gray-500 font-bold">${t('table.birthday') || '出生年月日'}</span>
+                            <span class="font-bold text-gray-700">${birthStr}</span>
+                        </div>
+                        ${idCardRowHtml}
+                    </div>
+
+                    ${actionCardHtml}
+                </article>
+            `;
         });
+
+        mobileCardsHtml += `
+            <div class="bg-red-50/80 border border-red-200 rounded-2xl p-4 flex justify-between items-center mt-2">
+                <span class="font-bold text-gray-700 text-sm">${t('table.total-label') || '此單位總計報名費用：'}</span>
+                <span class="font-black text-tkdRed text-lg">NT$ ${totalFee}</span>
+            </div>
+        </div>`;
 
         html += `
                         </tbody>
@@ -1800,6 +2131,7 @@ window.renderUserTables = () => {
                         </tfoot>
                     </table>
                 </div>
+                ${mobileCardsHtml}
             </div> `;
             
         // ✨ DOM Diffing 邏輯：有差異才更新
@@ -2457,6 +2789,513 @@ window.closeDeleteModal = () => {
 };
 
 // ==========================================
+// 📌 單位報名總表與匯款紀錄上傳邏輯
+// ==========================================
+window.currentSubTourId = null;
+window.currentSubUnit = null;
+window.currentSubSubTeam = null;
+
+window.tempSubSummaryUrl = null;
+window.tempSubSummaryName = null;
+window.tempSubRemittanceUrl = null;
+window.tempSubRemittanceName = null;
+
+window.openUploadSummaryModal = (tId, unit, subTeam) => {
+    window.currentSubTourId = tId;
+    window.currentSubUnit = unit;
+    window.currentSubSubTeam = subTeam;
+
+    const displayUnit = subTeam ? `${unit} (${subTeam})` : unit;
+    document.getElementById('upload-summary-unit-display').innerText = displayUnit;
+
+    // 尋找已有的上傳紀錄 (一般使用者端使用 myUnitSubmissions)
+    const sub = (appData.myUnitSubmissions || []).find(s => 
+        s.tournamentId === tId && s.unit === unit && s.subTeam === subTeam
+    );
+
+    // 重設狀態與暫存變數
+    window.tempSubSummaryUrl = sub ? sub.summaryFormUrl : null;
+    window.tempSubSummaryName = sub ? sub.summaryFormFileName : null;
+
+    // 重設檔案輸入框
+    document.getElementById('upload-summary-file').value = '';
+
+    // 更新簽名總表 UI
+    const summaryPreview = document.getElementById('upload-summary-preview-container');
+    if (window.tempSubSummaryUrl) {
+        summaryPreview.classList.remove('hidden');
+        document.getElementById('upload-summary-filename').innerText = window.tempSubSummaryName || '查看已上傳檔案';
+        document.getElementById('upload-summary-preview-link').href = window.tempSubSummaryUrl;
+    } else {
+        summaryPreview.classList.add('hidden');
+    }
+
+    // 更新審核回饋 UI
+    const feedbackContainer = document.getElementById('upload-summary-feedback-container');
+    if (sub && sub.status && sub.status !== 'none') {
+        feedbackContainer.classList.remove('hidden');
+        const statusEl = document.getElementById('upload-summary-feedback-status');
+        const notesEl = document.getElementById('upload-summary-feedback-notes');
+
+        if (sub.status === 'pending') {
+            statusEl.className = "inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-lg border border-orange-100 bg-orange-50 text-orange-600 shrink-0";
+            statusEl.innerText = "⏳ 待確認";
+            notesEl.innerText = "您的上傳資料已送出，管理員正在審核中，請稍候。";
+        } else if (sub.status === 'verified') {
+            statusEl.className = "inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-lg border border-green-100 bg-green-50 text-green-600 shrink-0";
+            statusEl.innerText = "✅ 已確認";
+            notesEl.innerText = sub.adminNotes ? `備註：${sub.adminNotes}` : "管理員已確認收款與檔案無誤，報名已正式生效！";
+        } else if (sub.status === 'rejected') {
+            statusEl.className = "inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-lg border border-red-100 bg-red-50 text-red-600 shrink-0";
+            statusEl.innerText = "❌ 資料錯誤";
+            notesEl.innerText = sub.adminNotes ? `錯誤原因：${sub.adminNotes}` : "資料錯誤，請重新檢查並上傳正確檔案。";
+        }
+    } else {
+        feedbackContainer.classList.add('hidden');
+    }
+
+    // 🔒 安全鎖定邏輯：僅在「已確認(verified)」時才禁止修改；上傳後待審核仍開放使用者修改或刪除
+    const isLocked = sub && sub.status === 'verified';
+    const btnSubmit = document.getElementById('btnSubmitUploadSummary');
+    
+    if (isLocked) {
+        if (btnSubmit) btnSubmit.classList.add('hidden');
+        document.querySelectorAll('#uploadSummaryModal button[onclick*="click()"]').forEach(b => b.classList.add('hidden'));
+        document.querySelectorAll('#uploadSummaryModal button[onclick*="removeUploadSubFile"]').forEach(b => b.classList.add('hidden'));
+    } else {
+        if (btnSubmit) btnSubmit.classList.remove('hidden');
+        document.querySelectorAll('#uploadSummaryModal button[onclick*="click()"]').forEach(b => b.classList.remove('hidden'));
+        document.querySelectorAll('#uploadSummaryModal button[onclick*="removeUploadSubFile"]').forEach(b => b.classList.remove('hidden'));
+    }
+
+    // 隱藏進度條
+    document.getElementById('upload-summary-progress').classList.add('hidden');
+
+    const modal = document.getElementById('uploadSummaryModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    setTimeout(() => { modal.firstElementChild.classList.remove('scale-95'); modal.firstElementChild.classList.add('scale-100'); }, 10);
+};
+
+window.closeUploadSummaryModal = () => {
+    const modal = document.getElementById('uploadSummaryModal');
+    modal.firstElementChild.classList.remove('scale-100'); modal.firstElementChild.classList.add('scale-95');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }, 300);
+};
+
+window.openUploadRemittanceModal = (tId, unit, subTeam) => {
+    window.currentSubTourId = tId;
+    window.currentSubUnit = unit;
+    window.currentSubSubTeam = subTeam;
+
+    const displayUnit = subTeam ? `${unit} (${subTeam})` : unit;
+    document.getElementById('upload-remittance-unit-display').innerText = displayUnit;
+
+    // 尋找已有的上傳紀錄 (一般使用者端使用 myUnitSubmissions)
+    const sub = (appData.myUnitSubmissions || []).find(s => 
+        s.tournamentId === tId && s.unit === unit && s.subTeam === subTeam
+    );
+
+    // 重設狀態與暫存變數
+    window.tempSubRemittanceUrl = sub ? sub.remittanceUrl : null;
+    window.tempSubRemittanceName = sub ? sub.remittanceFileName : null;
+
+    // 重設檔案輸入框
+    document.getElementById('upload-remittance-file').value = '';
+
+    // 更新匯款紀錄 UI
+    const remittancePreview = document.getElementById('upload-remittance-preview-container');
+    if (window.tempSubRemittanceUrl) {
+        remittancePreview.classList.remove('hidden');
+        document.getElementById('upload-remittance-filename').innerText = window.tempSubRemittanceName || '查看已上傳檔案';
+        document.getElementById('upload-remittance-preview-link').href = window.tempSubRemittanceUrl;
+    } else {
+        remittancePreview.classList.add('hidden');
+    }
+
+    // 更新審核回饋 UI
+    const feedbackContainer = document.getElementById('upload-remittance-feedback-container');
+    if (sub && sub.status && sub.status !== 'none') {
+        feedbackContainer.classList.remove('hidden');
+        const statusEl = document.getElementById('upload-remittance-feedback-status');
+        const notesEl = document.getElementById('upload-remittance-feedback-notes');
+
+        if (sub.status === 'pending') {
+            statusEl.className = "inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-lg border border-orange-100 bg-orange-50 text-orange-600 shrink-0";
+            statusEl.innerText = "⏳ 待確認";
+            notesEl.innerText = "您的上傳資料已送出，管理員正在審核中，請稍候。";
+        } else if (sub.status === 'verified') {
+            statusEl.className = "inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-lg border border-green-100 bg-green-50 text-green-600 shrink-0";
+            statusEl.innerText = "✅ 已確認";
+            notesEl.innerText = sub.adminNotes ? `備註：${sub.adminNotes}` : "管理員已確認收款與檔案無誤，報名已正式生效！";
+        } else if (sub.status === 'rejected') {
+            statusEl.className = "inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-lg border border-red-100 bg-red-50 text-red-600 shrink-0";
+            statusEl.innerText = "❌ 資料錯誤";
+            notesEl.innerText = sub.adminNotes ? `錯誤原因：${sub.adminNotes}` : "資料錯誤，請重新檢查並上傳正確檔案。";
+        }
+    } else {
+        feedbackContainer.classList.add('hidden');
+    }
+
+    // 🔒 安全鎖定邏輯：僅在「已確認(verified)」時才禁止修改；上傳後待審核仍開放使用者修改或刪除
+    const isLocked = sub && sub.status === 'verified';
+    const btnSubmit = document.getElementById('btnSubmitUploadRemittance');
+    
+    if (isLocked) {
+        if (btnSubmit) btnSubmit.classList.add('hidden');
+        document.querySelectorAll('#uploadRemittanceModal button[onclick*="click()"]').forEach(b => b.classList.add('hidden'));
+        document.querySelectorAll('#uploadRemittanceModal button[onclick*="removeUploadSubFile"]').forEach(b => b.classList.add('hidden'));
+    } else {
+        if (btnSubmit) btnSubmit.classList.remove('hidden');
+        document.querySelectorAll('#uploadRemittanceModal button[onclick*="click()"]').forEach(b => b.classList.remove('hidden'));
+        document.querySelectorAll('#uploadRemittanceModal button[onclick*="removeUploadSubFile"]').forEach(b => b.classList.remove('hidden'));
+    }
+
+    // 隱藏進度條
+    document.getElementById('upload-remittance-progress').classList.add('hidden');
+
+    const modal = document.getElementById('uploadRemittanceModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    setTimeout(() => { modal.firstElementChild.classList.remove('scale-95'); modal.firstElementChild.classList.add('scale-100'); }, 10);
+};
+
+window.closeUploadRemittanceModal = () => {
+    const modal = document.getElementById('uploadRemittanceModal');
+    modal.firstElementChild.classList.remove('scale-100'); modal.firstElementChild.classList.add('scale-95');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }, 300);
+};
+
+// 🌟 圖片壓縮工具 (Client-side Image Compression with Error Reject)
+window.compressImage = (file, maxWidth = 1200, quality = 0.75) => {
+    return new Promise((resolve, reject) => {
+        // 如果不是圖片，直接回傳原檔案（如 PDF）
+        if (!file.type.startsWith('image/')) {
+            resolve(file);
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("檔案讀取錯誤"));
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onerror = () => reject(new Error("圖片載入錯誤"));
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    // 等比例縮小
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) {
+                        reject(new Error("Canvas 2D Context 取得失敗"));
+                        return;
+                    }
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    canvas.toBlob((blob) => {
+                        if (!blob) {
+                            reject(new Error("圖片轉檔 Blob 失敗"));
+                            return;
+                        }
+                        // 將檔名後綴強制修正為 .jpg
+                        const compressedName = file.name.replace(/\.[^/.]+$/, '') + '.jpg';
+                        const compressedFile = new File([blob], compressedName, {
+                            type: 'image/jpeg',
+                            lastModified: Date.now()
+                        });
+                        resolve(compressedFile);
+                    }, 'image/jpeg', quality);
+                } catch (e) {
+                    reject(e);
+                }
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+};
+
+window.handleUploadSubFile = async (inputEl, fileType) => {
+    const originalFile = inputEl.files[0];
+    if (!originalFile) return;
+
+    const progressDiv = document.getElementById(`upload-${fileType}-progress`);
+    const percentSpan = document.getElementById(`upload-${fileType}-percent`);
+    const previewDiv = document.getElementById(`upload-${fileType}-preview-container`);
+
+    // 限制原始檔案大小 (未壓縮前最高 20MB)
+    if (originalFile.size > 20 * 1024 * 1024) {
+        window.showToast("⚠️ 檔案太大，不可超過 20MB！", "error");
+        inputEl.value = '';
+        return;
+    }
+
+    progressDiv.classList.remove('hidden');
+    previewDiv.classList.add('hidden');
+
+    let file;
+    try {
+        // 進行圖片壓縮
+        file = await window.compressImage(originalFile);
+    } catch (err) {
+        console.error("圖片壓縮失敗:", err);
+        window.showToast("❌ 圖片處理失敗，請嘗試換張圖片或使用 PDF 上傳。", "error");
+        progressDiv.classList.add('hidden');
+        inputEl.value = '';
+        return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+        window.showToast("⚠️ 壓縮後檔案大小仍超過 10MB，請更換檔案！", "error");
+        progressDiv.classList.add('hidden');
+        inputEl.value = '';
+        return;
+    }
+
+    // 記錄準備被替換的舊檔案 URL
+    const oldUrl = fileType === 'summary' ? window.tempSubSummaryUrl : window.tempSubRemittanceUrl;
+
+    // 清理與過濾檔名與路徑字元，防禦 XSS 與路徑穿越
+    const cleanFileName = file.name.replace(/[^\w.\-]/g, '_').replace(/_+/g, '_');
+    const safeTourId = String(window.currentSubTourId).replace(/[^a-zA-Z0-9_-]/g, '_');
+    const cleanUnitKey = `${window.currentSubUnit}_${window.currentSubSubTeam || ''}`.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_');
+    
+    const path = `artifacts/${appIdStr}/users/${currentUser.uid}/${safeTourId}/${cleanUnitKey}/${fileType}_${Date.now()}_${cleanFileName}`;
+    
+    const storageRef = ref(storage, path);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    uploadTask.on('state_changed', 
+        (snapshot) => {
+            const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+            percentSpan.innerText = progress + '%';
+        }, 
+        (error) => {
+            console.error("上傳失敗:", error);
+            window.showToast("❌ 上傳失敗：" + error.message, "error");
+            progressDiv.classList.add('hidden');
+        }, 
+        async () => {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            progressDiv.classList.add('hidden');
+            
+            // 上傳成功後，且新檔案可用時，才刪除原本 Storage 中的舊檔案，避免爆滿與斷圖
+            if (oldUrl) {
+                try {
+                    await deleteObject(ref(storage, oldUrl));
+                    console.log(`🗑️ 舊的 ${fileType} 檔案已成功從 Storage 刪除！`);
+                } catch (e) {
+                    console.warn("Storage 舊檔刪除失敗(可能檔案本就不存在):", e);
+                }
+            }
+
+            if (fileType === 'summary') {
+                window.tempSubSummaryUrl = downloadURL;
+                window.tempSubSummaryName = file.name;
+            } else {
+                window.tempSubRemittanceUrl = downloadURL;
+                window.tempSubRemittanceName = file.name;
+            }
+            
+            previewDiv.classList.remove('hidden');
+            document.getElementById(`upload-${fileType}-filename`).innerText = file.name;
+            document.getElementById(`upload-${fileType}-preview-link`).href = downloadURL;
+
+            window.showToast("✅ 檔案上傳成功！");
+        }
+    );
+};
+
+window.removeUploadSubFile = async (fileType) => {
+    // 再次確認是否已經鎖定：僅「已確認 (verified)」才禁止刪除
+    const sub = (appData.myUnitSubmissions || []).find(s => 
+        s.tournamentId === window.currentSubTourId && s.unit === window.currentSubUnit && s.subTeam === window.currentSubSubTeam
+    );
+    if (sub && sub.status === 'verified') {
+        window.showToast("⚠️ 管理員已確認收款，禁止刪除或修改檔案！", "error");
+        return;
+    }
+
+    const fileLabel = fileType === 'summary' ? '報名總表' : '匯款證明';
+    const isConfirmed = await window.showCustomConfirm(
+        '確認刪除上傳檔案',
+        `確定要刪除已上傳的「<span class="text-red-600 font-black">${fileLabel}</span>」檔案嗎？<br><span class="text-xs text-gray-500 font-bold mt-2 block">此動作將同時清除雲端檔案與資料庫紀錄，無法復原。</span>`,
+        '確定刪除',
+        '保留檔案'
+    );
+    if (!isConfirmed) return;
+
+    const deleteBtn = document.querySelector(`#upload-${fileType}-preview-container button`);
+    const originalBtnHtml = deleteBtn ? deleteBtn.innerHTML : '';
+    if (deleteBtn) {
+        deleteBtn.disabled = true;
+        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i>刪除中...';
+    }
+
+    const progressDiv = document.getElementById(`upload-${fileType}-progress`);
+    if (progressDiv) {
+        progressDiv.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i>正在同步刪除雲端檔案與資料庫紀錄，請稍候...';
+        progressDiv.className = 'mt-2 text-xs font-black text-red-500 flex items-center animate-pulse';
+        progressDiv.classList.remove('hidden');
+    }
+
+    try {
+        const urlToDelete = fileType === 'summary' ? window.tempSubSummaryUrl : window.tempSubRemittanceUrl;
+        
+        if (urlToDelete) {
+            try {
+                await deleteObject(ref(storage, urlToDelete));
+                console.log(`🗑️ 已成功從 Storage 中刪除已上傳的 ${fileType} 檔案。`);
+            } catch (e) {
+                console.warn("Storage 檔案刪除失敗或檔案已不存在:", e);
+            }
+        }
+
+        if (fileType === 'summary') {
+            window.tempSubSummaryUrl = null;
+            window.tempSubSummaryName = null;
+        } else {
+            window.tempSubRemittanceUrl = null;
+            window.tempSubRemittanceName = null;
+        }
+
+        document.getElementById(`upload-${fileType}-preview-container`).classList.add('hidden');
+        document.getElementById(`upload-${fileType}-file`).value = '';
+
+        // ✨ 同步刪除 Firestore 上的檔案連結，讓卡片狀態及後台即時更新
+        if (sub && sub.id && currentUser) {
+            const subRef = doc(db, 'artifacts', appIdStr, 'public', 'data', 'unit_submissions', sub.id);
+            const updateData = {
+                updatedAt: new Date().toISOString()
+            };
+            if (fileType === 'summary') {
+                updateData.summaryFormUrl = null;
+                updateData.summaryFormFileName = null;
+                sub.summaryFormUrl = null;
+                sub.summaryFormFileName = null;
+            } else {
+                updateData.remittanceUrl = null;
+                updateData.remittanceFileName = null;
+                sub.remittanceUrl = null;
+                sub.remittanceFileName = null;
+            }
+
+            if (!sub.summaryFormUrl || !sub.remittanceUrl) {
+                updateData.status = 'not_uploaded';
+                sub.status = 'not_uploaded';
+            }
+            await setDoc(subRef, updateData, { merge: true });
+            if (typeof window.renderMyRegistrations === 'function') window.renderMyRegistrations();
+        }
+
+        window.showToast("🗑️ 已成功刪除上傳資料！");
+    } finally {
+        if (progressDiv) {
+            progressDiv.classList.add('hidden');
+            progressDiv.className = `hidden mt-2 text-xs font-bold ${fileType === 'summary' ? 'text-tkdBlue' : 'text-green-600'}`;
+            progressDiv.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i> 上傳中... <span id="upload-${fileType}-percent">0%</span>`;
+        }
+        if (deleteBtn) {
+            deleteBtn.disabled = false;
+            deleteBtn.innerHTML = originalBtnHtml;
+        }
+    }
+};
+
+window.submitUploadSubmission = async (fileType) => {
+    if (fileType === 'summary' && !window.tempSubSummaryUrl) {
+        window.showToast("⚠️ 請先選擇並上傳簽名總表！", "error");
+        return;
+    }
+    if (fileType === 'remittance' && !window.tempSubRemittanceUrl) {
+        window.showToast("⚠️ 請先選擇並上傳匯款證明！", "error");
+        return;
+    }
+
+    const btnId = fileType === 'summary' ? 'btnSubmitUploadSummary' : 'btnSubmitUploadRemittance';
+    const btn = document.getElementById(btnId);
+    const originalHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 送出中...';
+    }
+
+    try {
+        const rawId = `${window.currentSubTourId}_${window.currentSubUnit}_${window.currentSubSubTeam || ''}`;
+        const submissionId = btoa(unescape(encodeURIComponent(rawId)))
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/g, '');
+
+        const docRef = doc(db, 'artifacts', appIdStr, 'public', 'data', 'unit_submissions', submissionId);
+        
+        const existingSub = (appData.myUnitSubmissions || []).find(s => s.id === submissionId);
+        const wasRejected = existingSub && existingSub.status === 'rejected';
+        const isResubmitted = wasRejected || (existingSub && existingSub.isResubmitted === true) || !!existingSub;
+
+        const updateData = {
+            tournamentId: window.currentSubTourId,
+            tournamentName: selectedTournament?.name || '',
+            city: selectedTournament?.city || '',
+            unit: window.currentSubUnit,
+            subTeam: window.currentSubSubTeam || '',
+            userId: currentUser.uid,
+            email: currentUser.email || '',
+            status: 'pending', // 送出時或補件重傳時，轉為待審查
+            isResubmitted: isResubmitted,
+            uploadedAt: serverTimestamp()
+        };
+        if (wasRejected || existingSub) {
+            updateData.resubmittedAt = serverTimestamp();
+            updateData.resubmissionCount = (existingSub?.resubmissionCount || 0) + 1;
+        }
+
+        if (fileType === 'summary') {
+            updateData.summaryFormUrl = window.tempSubSummaryUrl || null;
+            updateData.summaryFormFileName = window.tempSubSummaryName || null;
+        } else {
+            updateData.remittanceUrl = window.tempSubRemittanceUrl || null;
+            updateData.remittanceFileName = window.tempSubRemittanceName || null;
+        }
+
+        await setDoc(docRef, updateData, { merge: true });
+
+        window.showToast("🎉 資料已成功送出審核！");
+        if (fileType === 'summary') {
+            window.closeUploadSummaryModal();
+        } else {
+            window.closeUploadRemittanceModal();
+        }
+        
+        if (window.renderMyRecordsPage) window.renderMyRecordsPage();
+
+    } catch (err) {
+        console.error("提交審核失敗:", err);
+        window.showToast("❌ 提交失敗：" + err.message, "error");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+    }
+};
+
+// ==========================================
 // 7. 初始化事件綁定 (Export)
 // ==========================================
 
@@ -2469,6 +3308,17 @@ export function initFrontend() {
         if (document.getElementById('page-register')?.classList.contains('active')) {
             if (window.renderUserTables) window.renderUserTables();
         }
+        if (document.getElementById('page-my-records')?.classList.contains('active')) {
+            if (window.renderMyRecordsPage) window.renderMyRecordsPage();
+        }
+        if (document.getElementById('page-admin')?.classList.contains('active')) {
+            if (window.executeAdminRegistrationsRender) window.executeAdminRegistrationsRender();
+        }
+    });
+
+    // 當「上傳總表與匯款紀錄」更新時，自動重繪「我的報名」頁面與後台
+    subscribe('unitSubmissionsUpdated', () => {
+        if (window.updateMyRecordsErrorBadge) window.updateMyRecordsErrorBadge();
         if (document.getElementById('page-my-records')?.classList.contains('active')) {
             if (window.renderMyRecordsPage) window.renderMyRecordsPage();
         }
@@ -2849,18 +3699,27 @@ export function initFrontend() {
             try {
                 let currentDocId = editId; 
 
-                if (editId) { 
-                    await Promise.all([
-                        setDoc(doc(db, 'artifacts', appIdStr, 'public', 'data', 'registrations', editId), rec, { merge: true }),
-                        minLoadingTime
-                    ]);
-                    
-                    // ✨ 修正：寫入本地任何快取前，強制使用官方定價覆寫，徹底沒收前端注入的惡意數值
-                    const authoritativeFee = (selectedTournament.fees && selectedTournament.fees[rec.item] && selectedTournament.fees[rec.item][rec.group] !== undefined)
-                        ? (Number(selectedTournament.fees[rec.item][rec.group]) || 0)
-                        : (Number(rec.fee) || 0);
-                    rec.fee = authoritativeFee;
+                // 準備 Callable Function 的封包
+                const callPayload = {
+                    appId: appIdStr,
+                    ...rec
+                };
+                if (editId) {
+                    callPayload.id = editId;
+                }
 
+                // 呼叫後端進行安全計費與寫入
+                const saveRegistration = httpsCallable(functions, 'saveRegistration');
+                const callResult = await Promise.all([
+                    saveRegistration(callPayload),
+                    minLoadingTime
+                ]);
+                
+                const { id, fee } = callResult[0].data;
+                currentDocId = id;
+                rec.fee = fee; // 套用後端計算的權威費用
+
+                if (editId) { 
                     const updatedReg = { id: editId, ...rec };
                     const idx = appData.registrations.findIndex(r => r.id === editId);
                     if (idx !== -1) appData.registrations[idx] = updatedReg;
@@ -2880,21 +3739,9 @@ export function initFrontend() {
                     window.cancelEdit(); 
                     
                 } else { 
-                    const [docRef] = await Promise.all([
-                        addDoc(getDbPath('registrations'), rec),
-                        minLoadingTime
-                    ]);
+                    const newReg = { id: currentDocId, ...rec };
                     
-                    // ✨ 修正：寫入本地任何快取前，強制使用官方定價覆寫，徹底沒收前端注入的惡意數值
-                    const authoritativeFee = (selectedTournament.fees && selectedTournament.fees[rec.item] && selectedTournament.fees[rec.item][rec.group] !== undefined)
-                        ? (Number(selectedTournament.fees[rec.item][rec.group]) || 0)
-                        : (Number(rec.fee) || 0);
-                    rec.fee = authoritativeFee;
-
-                    currentDocId = docRef.id; 
-                    const newReg = { id: docRef.id, ...rec };
-                    
-                    const idx = appData.registrations.findIndex(r => r.id === docRef.id);
+                    const idx = appData.registrations.findIndex(r => r.id === currentDocId);
                     if (idx !== -1) {
                         appData.registrations[idx] = newReg;
                     } else {
@@ -2902,13 +3749,13 @@ export function initFrontend() {
                     }
 
                     if (window.adminCurrentTourRegs) {
-                        const aIdx = window.adminCurrentTourRegs.findIndex(r => r.id === docRef.id);
+                        const aIdx = window.adminCurrentTourRegs.findIndex(r => r.id === currentDocId);
                         if (aIdx !== -1) window.adminCurrentTourRegs[aIdx] = newReg;
                         else window.adminCurrentTourRegs.push(newReg);
                     }
                     
                     if (window.myOwnRegs && rec.userId === currentUser.uid) {
-                        const mIdx = window.myOwnRegs.findIndex(r => r.id === docRef.id);
+                        const mIdx = window.myOwnRegs.findIndex(r => r.id === currentDocId);
                         if (mIdx !== -1) window.myOwnRegs[mIdx] = newReg;
                         else window.myOwnRegs.push(newReg);
                     }
