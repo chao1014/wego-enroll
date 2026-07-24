@@ -234,6 +234,8 @@ window.navigate = (p, isPushState = true, scrollToTop = true) => {
                 if (window.renderFormOptions) window.renderFormOptions();
                 if (window.checkTournamentStatus) window.checkTournamentStatus();
                 if (window.renderUserTables) window.renderUserTables();
+                // 背景預熱實際提交使用的 Callable Function，不阻擋表單操作。
+                if (window.warmUpRegistrationService) window.warmUpRegistrationService();
             }
         }
 

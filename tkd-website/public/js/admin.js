@@ -145,6 +145,7 @@ export function updateAdminTourDropdown() {
 window.updateAdminTourDropdown = updateAdminTourDropdown;
 
 window.adminCurrentTourUnsubscribe = null;
+window.adminCurrentTourSubmissionsUnsubscribe = null;
 window.adminCurrentTourRegs = [];
 window.lastAdminFilterId = null;
 window.debounceTimer = null;
@@ -551,26 +552,51 @@ window.renderAdminRegistrations = async () => {
     if (window.lastAdminFilterId !== filterId) {
         window.lastAdminFilterId = filterId;
 
-        // ✨ 修正：動態建立查詢條件陣列，針對 City Admin 補上 city 過濾條件
-        let queryArgs = [getDbPath('registrations'), where("tournamentId", "==", filterId)];
+        // 清除舊的監聽
+        if (window.adminCurrentTourUnsubscribe) window.adminCurrentTourUnsubscribe();
+        if (window.adminCurrentTourSubmissionsUnsubscribe) window.adminCurrentTourSubmissionsUnsubscribe();
+
+        // 動態建立查詢條件陣列，針對 City Admin 補上 city 過濾條件
+        let registrationQueryArgs = [getDbPath('registrations'), where("tournamentId", "==", filterId)];
+        let submissionQueryArgs = [getDbPath('unit_submissions'), where("tournamentId", "==", filterId)];
 
         if (currentUserRole === 'scoped_admin' && appData.myScope && appData.myScope.type === 'city') {
-            queryArgs.push(where("city", "==", appData.myScope.value));
+            registrationQueryArgs.push(where("city", "==", appData.myScope.value));
+            submissionQueryArgs.push(where("city", "==", appData.myScope.value));
         }
 
-        const q = query(...queryArgs);
-        const snap = await getDocs(q);
+        // 綁定新的即時監聽 (registrations)
+        window.adminCurrentTourUnsubscribe = onSnapshot(query(...registrationQueryArgs), (snap) => {
+            window.adminCurrentTourRegs = [];
+            snap.forEach(d => window.adminCurrentTourRegs.push({ id: d.id, ...d.data() }));
 
-        window.adminCurrentTourRegs = [];
-        snap.forEach(d => window.adminCurrentTourRegs.push({ id: d.id, ...d.data() }));
+            const myRegs = window.myOwnRegs || [];
+            const combined = [...myRegs, ...window.adminCurrentTourRegs];
+            const uniqueMap = new Map();
+            combined.forEach(r => uniqueMap.set(r.id, r));
+            setRegistrationsData(Array.from(uniqueMap.values()));
 
-        const myRegs = window.myOwnRegs || [];
-        const combined = [...myRegs, ...window.adminCurrentTourRegs];
-        const uniqueMap = new Map();
-        combined.forEach(r => uniqueMap.set(r.id, r));
-        setRegistrationsData(Array.from(uniqueMap.values()));
+            // 觸發畫面更新
+            if (window.debouncedRenderAdminRegistrations) {
+                window.debouncedRenderAdminRegistrations();
+            } else {
+                window.executeAdminRegistrationsRender();
+            }
+        });
 
-        window.executeAdminRegistrationsRender();
+        // 綁定新的即時監聽 (unit_submissions 審核狀態)
+        window.adminCurrentTourSubmissionsUnsubscribe = onSnapshot(query(...submissionQueryArgs), (snap) => {
+            const adminUnitSubmissions = [];
+            snap.forEach(d => adminUnitSubmissions.push({ id: d.id, ...d.data() }));
+            setAppData({ adminUnitSubmissions });
+
+            // 觸發畫面更新
+            if (window.debouncedRenderAdminRegistrations) {
+                window.debouncedRenderAdminRegistrations();
+            } else {
+                window.executeAdminRegistrationsRender();
+            }
+        });
     } else {
         window.executeAdminRegistrationsRender();
     }

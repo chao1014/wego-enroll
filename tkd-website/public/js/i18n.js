@@ -51,6 +51,13 @@ export const translations = {
         'reg.save': '儲存並提交本筆資料',
         'reg.save-edit': '儲存修改內容',
         'reg.admin-badge': '管理員特權',
+        'reg.loading-create-title': '正在安全送出報名',
+        'reg.loading-edit-title': '正在安全儲存修改',
+        'reg.loading-description': '系統正在儲存並確認資料，請先不要重複送出或關閉頁面。',
+        'reg.loading-checked': '資料檢查完成',
+        'reg.loading-saving': '正在儲存報名資料',
+        'reg.loading-wait': '通常只需要幾秒鐘，感謝您的耐心等候',
+        'reg.loading-button': '正在送出，請稍候',
 
         // --- 3. 賽事狀態與時間 ---
         'reg.status-pending': '尚未開放報名',
@@ -196,6 +203,13 @@ export const translations = {
         'reg.save': 'Save and Submit',
         'reg.save-edit': 'Save Changes',
         'reg.admin-badge': 'Admin Privileges',
+        'reg.loading-create-title': 'Submitting securely',
+        'reg.loading-edit-title': 'Saving changes securely',
+        'reg.loading-description': 'Your information is being saved and verified. Please do not submit again or close this page.',
+        'reg.loading-checked': 'Information checked',
+        'reg.loading-saving': 'Saving registration',
+        'reg.loading-wait': 'This usually takes just a few seconds',
+        'reg.loading-button': 'Submitting, please wait',
 
         // --- 3. 賽事狀態與時間 ---
         'reg.status-pending': 'Registration Pending',

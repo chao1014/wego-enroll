@@ -77,12 +77,18 @@ exports.saveRegistration = functions.https.onCall(async (data, context) => {
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', '請先登入系統！');
     }
+
+    const payload = data.data || data || {};
+
+    // 報名頁背景暖機：啟動實際提交會使用的同一支 Function，但不讀寫任何報名資料。
+    if (payload.action === 'warmup') {
+        return { success: true, warmed: true };
+    }
     
     const callerUid = context.auth.uid;
     const callerEmail = context.auth.token.email || '';
     const db = admin.firestore();
     
-    const payload = data.data || data || {};
     const appId = payload.appId || 'wego-enroll-app';
     const regId = payload.id; // 若有傳入 id，代表是修改/更新報名
 
@@ -168,6 +174,8 @@ exports.saveRegistration = functions.https.onCall(async (data, context) => {
         playerName: payload.playerName || '',
         birthday: payload.birthday || '',
         idNumber: payload.idNumber || '',
+        item: payload.item || '',
+        group: payload.group || '',
         level: payload.level || '',
         fee: expectedFee, // 後端決定
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
